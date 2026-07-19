@@ -1,0 +1,67 @@
+{
+  "name": "knissa-api",
+  "version": "1.0.0",
+  "description": "Backend API for the Knissa digital financial platform.",
+  "private": false,
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check": "npm run lint && npm run build",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "prisma:studio": "prisma studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Knissa-Technologies/knissa-api.git"
+  },
+  "keywords": [
+    "knissa",
+    "fintech",
+    "api",
+    "nodejs",
+    "typescript",
+    "express",
+    "prisma",
+    "mysql"
+  ],
+  "author": "Knissa Technologies",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Knissa-Technologies/knissa-api/issues"
+  },
+  "homepage": "https://github.com/Knissa-Technologies/knissa-api#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^26.1.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.9.5",
+    "prisma": "^7.8.0",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.64.0"
+  }
+}
