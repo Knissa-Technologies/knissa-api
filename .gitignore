@@ -9,13 +9,7 @@ dist/
 
 # Logs
 *.log
-
-# macOS
-.DS_Store
-
-# IDE
-.vscode/
-.idea/
-
-# Prisma
-prisma/dev.db
+node_modules
+.env
+dist
+coverage
