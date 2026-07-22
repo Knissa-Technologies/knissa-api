@@ -5,6 +5,9 @@ import { StatementService } from "../services/StatementService.js";
 import { OpenAccountService } from "../services/OpenAccountService.js";
 import { openAccountSchema } from "../validators/openAccount.schema.js";
 
+import { WithdrawService } from "../services/WithdrawService.js";
+import { withdrawSchema } from "../validators/withdraw.schema.js";
+
 export class WalletController {
   async deposit(req: Request, res: Response) {
     const service = new DepositService();
@@ -31,6 +34,16 @@ export class WalletController {
       success: true,
       data: wallet,
     });
+  }
+
+  async withdraw(req: Request, res: Response) {
+    const data = withdrawSchema.parse(req.body);
+
+    const service = new WithdrawService();
+
+    const result = await service.execute(data);
+
+    return res.status(200).json(result);
   }
 
   async statement(req: Request, res: Response) {

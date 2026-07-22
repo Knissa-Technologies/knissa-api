@@ -22,4 +22,9 @@ walletRoutes.post(
   "/open-account",
   walletController.openAccount
 );
+
+walletRoutes.post("/withdraw", (req, res) =>
+  walletController.withdraw(req, res)
+);
+
 export default walletRoutes;
