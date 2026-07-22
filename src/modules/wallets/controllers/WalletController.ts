@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 
 import { DepositService } from "../services/DepositService.js";
 import { StatementService } from "../services/StatementService.js";
+import { OpenAccountService } from "../services/OpenAccountService.js";
+import { openAccountSchema } from "../validators/openAccount.schema.js";
 
 export class WalletController {
   async deposit(req: Request, res: Response) {
@@ -10,6 +12,22 @@ export class WalletController {
     const wallet = await service.execute(req.body);
 
     return res.status(200).json({
+      success: true,
+      data: wallet,
+    });
+  }
+
+  async openAccount(req: Request, res: Response) {
+    const data = openAccountSchema.parse(req.body);
+
+    const service = new OpenAccountService();
+
+    const wallet = await service.execute(
+      data.userId,
+      data.countryId
+    );
+
+    return res.status(201).json({
       success: true,
       data: wallet,
     });

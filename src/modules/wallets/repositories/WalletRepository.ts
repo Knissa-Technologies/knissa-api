@@ -70,6 +70,34 @@ export class WalletRepository {
     });
   }
 
+
+  async updateBalanceByAmount(id: string, amount: number) {
+    return this.db.wallet.update({
+      where: {
+        id,
+      },
+      data: {
+        balance: {
+          increment: amount,
+        },
+      },
+    });
+  }
+
+  async decreaseBalance(id: string, amount: number) {
+    return this.db.wallet.update({
+      where: {
+        id,
+      },
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+    });
+  }
+
+
   async findCurrencyByCode(code: string) {
     return this.db.currency.findUnique({
       where: {
