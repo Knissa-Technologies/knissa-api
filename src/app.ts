@@ -1,24 +1,44 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
 
-dotenv.config();
+import { authRoutes } from "./modules/auth/routes.js";
+import { usersRoutes } from "./modules/users/routes.js";
+import { errorHandler } from "./shared/middlewares/errorHandler.js";
+import walletRoutes from "./modules/wallets/routes/wallet.routes.js";
 
 const app = express();
 
+// Middlewares
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(morgan("dev"));
+app.use("/wallets", walletRoutes);
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    success: true,
-    service: 'knissa-api',
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+// Health Check
+app.get("/", (_req, res) => {
+  return res.json({
+    name: "Knissa API",
+    version: "1.0.0",
+    status: "running",
   });
 });
+
+// Routes
+app.use("/auth", authRoutes);
+app.use("/users", usersRoutes);
+
+// 404
+app.use((_req, res) => {
+  return res.status(404).json({
+    success: false,
+    message: "Route not found.",
+  });
+});
+
+// Error Handler (SEMPRE O ÚLTIMO)
+app.use(errorHandler);
 
 export default app;

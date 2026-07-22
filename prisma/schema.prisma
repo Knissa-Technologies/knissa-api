@@ -66,11 +66,10 @@ model Country {
   phoneCode    String?
   currencyCode String?
 
+  users User[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  users      User[]
-  currencies Currency[]
 
   @@map("countries")
 }
@@ -86,13 +85,12 @@ model Currency {
 
   isActive Boolean @default(true)
 
-  countryId String?
-
-  country Country? @relation(fields: [countryId], references: [id])
-
   wallets Wallet[]
 
-  baseRates  ExchangeRate[] @relation("BaseCurrency")
+  transactions Transaction[]
+
+  baseRates ExchangeRate[] @relation("BaseCurrency")
+
   quoteRates ExchangeRate[] @relation("QuoteCurrency")
 
   createdAt DateTime @default(now())
@@ -113,30 +111,35 @@ model User {
   firstName String
   lastName  String
 
-  email String  @unique
+  email        String @unique
+  passwordHash String
+
   phone String?
 
-  passwordHash String
+  emailVerified Boolean @default(false)
+  phoneVerified Boolean @default(false)
 
   role UserRole @default(USER)
 
-  status UserStatus @default(PENDING)
+  status UserStatus @default(ACTIVE)
 
-  countryId String?
-
-  country Country? @relation(fields: [countryId], references: [id])
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id])
 
   wallets Wallet[]
+
+  refreshTokens RefreshToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([email])
   @@map("users")
 }
 
 //
 // ======================================================
-// FINANCIAL
+// WALLETS
 // ======================================================
 //
 
@@ -146,6 +149,10 @@ model Wallet {
   userId String
 
   currencyId String
+
+  accountNumber String @unique
+
+  balance Decimal @default(0) @db.Decimal(18, 2)
 
   status WalletStatus @default(ACTIVE)
 
@@ -158,7 +165,6 @@ model Wallet {
   ledgerEntries LedgerEntry[]
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
 
   @@unique([userId, currencyId])
@@ -167,10 +173,18 @@ model Wallet {
   @@map("wallets")
 }
 
+//
+// ======================================================
+// TRANSACTIONS
+// ======================================================
+//
+
 model Transaction {
   id String @id @default(uuid())
 
   walletId String
+
+  currencyId String
 
   type TransactionType
 
@@ -178,25 +192,42 @@ model Transaction {
 
   amount Decimal @db.Decimal(18, 2)
 
+  feeAmount Decimal @default(0) @db.Decimal(18, 2)
+
+  netAmount Decimal @db.Decimal(18, 2)
+
   description String?
 
-  reference String? @unique
+  reference String @unique
+
+  externalReference String?
+
+  completedAt DateTime?
 
   wallet Wallet @relation(fields: [walletId], references: [id])
+
+  currency Currency @relation(fields: [currencyId], references: [id])
 
   ledgerEntries LedgerEntry[]
 
   fee Fee?
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
 
   @@index([walletId])
+  @@index([currencyId])
   @@index([status])
   @@index([type])
+  @@index([reference])
   @@map("transactions")
 }
+
+//
+// ======================================================
+// LEDGER
+// ======================================================
+//
 
 model LedgerEntry {
   id String @id @default(uuid())
@@ -220,6 +251,12 @@ model LedgerEntry {
   @@map("ledger_entries")
 }
 
+//
+// ======================================================
+// EXCHANGE
+// ======================================================
+//
+
 model ExchangeRate {
   id String @id @default(uuid())
 
@@ -229,17 +266,24 @@ model ExchangeRate {
 
   rate Decimal @db.Decimal(18, 8)
 
+  source String?
+
   baseCurrency Currency @relation("BaseCurrency", fields: [baseCurrencyId], references: [id])
 
   quoteCurrency Currency @relation("QuoteCurrency", fields: [quoteCurrencyId], references: [id])
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
 
   @@unique([baseCurrencyId, quoteCurrencyId])
   @@map("exchange_rates")
 }
+
+//
+// ======================================================
+// FEES
+// ======================================================
+//
 
 model Fee {
   id String @id @default(uuid())
@@ -255,4 +299,29 @@ model Fee {
   createdAt DateTime @default(now())
 
   @@map("fees")
+}
+
+//
+// ======================================================
+// AUTH
+// ======================================================
+//
+
+model RefreshToken {
+  id String @id @default(uuid())
+
+  tokenHash String
+
+  userId String
+
+  expiresAt DateTime
+
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
