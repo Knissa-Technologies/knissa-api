@@ -8,6 +8,7 @@ import { usersRoutes } from "./modules/users/routes.js";
 import { errorHandler } from "./shared/middlewares/errorHandler.js";
 import walletRoutes from "./modules/wallets/routes/wallet.routes.js";
 import exchangeRateRoutes from "./modules/exchange-rates/routes/exchange-rate.routes.js";
+import paymentRoutes from "./modules/payments/routes/payment.routes.js";
 
 const app = express();
 
@@ -19,6 +20,8 @@ app.use(morgan("dev"));
 
 app.use("/wallets", walletRoutes);
 app.use("/exchange-rates", exchangeRateRoutes);
+app.use("/payments", paymentRoutes);
+app.use("/payments", paymentRoutes);
 
 // Health Check
 app.get("/", (_req, res) => {
