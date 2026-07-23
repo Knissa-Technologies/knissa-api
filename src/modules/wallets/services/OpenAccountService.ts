@@ -20,15 +20,6 @@ export class OpenAccountService {
     console.log("User ID:", userId);
     console.log("Country ID:", countryId);
 
-    // Verifica se já existe uma carteira
-    const walletExists = await this.walletRepository.findByUserId(userId);
-
-    console.log("Wallet existente:", walletExists);
-
-    if (walletExists) {
-      throw new AppError("Wallet already exists.", 409);
-    }
-
     // Busca o país
     const country = await this.countryRepository.findById(countryId);
 
@@ -42,7 +33,7 @@ export class OpenAccountService {
       throw new AppError("Country has no default currency.", 400);
     }
 
-    // Busca a moeda
+    // Busca a moeda do país
     const currency = await this.currencyRepository.findByCode(
       country.currencyCode
     );
@@ -53,7 +44,23 @@ export class OpenAccountService {
       throw new AppError("Currency not found.", 404);
     }
 
-    // Gera número da conta
+    // Verifica se o usuário já possui uma carteira nesta moeda
+    const walletExists =
+      await this.walletRepository.findByUserAndCurrency(
+        userId,
+        currency.id
+      );
+
+    console.log("Wallet existente para esta moeda:", walletExists);
+
+    if (walletExists) {
+      throw new AppError(
+        `User already has a ${currency.code} wallet.`,
+        409
+      );
+    }
+
+    // Gera um número de conta único
     let accountNumber = generateAccountNumber();
 
     while (
@@ -64,7 +71,7 @@ export class OpenAccountService {
 
     console.log("Account Number:", accountNumber);
 
-    // Cria a Wallet
+    // Cria a carteira
     const wallet = await this.walletRepository.create({
       userId,
       currencyId: currency.id,
