@@ -1,7 +1,4 @@
-import {
-  LedgerEntryType,
-  TransactionType,
-} from "@prisma/client";
+import { LedgerEntryType, TransactionType } from "@prisma/client";
 
 import { prisma } from "../../../infra/database/prisma.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -19,7 +16,7 @@ export class WithdrawService {
     const walletRepository = new WalletRepository();
 
     const wallet = await walletRepository.findByAccountNumber(
-      data.accountNumber
+      data.accountNumber,
     );
 
     if (!wallet) {
@@ -43,7 +40,7 @@ export class WithdrawService {
 
       await walletRepository.updateBalance(
         wallet.id,
-        Number(wallet.balance) - data.amount
+        Number(wallet.balance) - data.amount,
       );
 
       const transaction = await transactionRepository.create({

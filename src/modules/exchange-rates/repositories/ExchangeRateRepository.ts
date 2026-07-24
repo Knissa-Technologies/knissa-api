@@ -11,9 +11,7 @@ interface UpdateExchangeRateDTO {
 }
 
 export class ExchangeRateRepository {
-  constructor(
-    private readonly db: PrismaExecutor = prisma
-  ) {}
+  constructor(private readonly db: PrismaExecutor = prisma) {}
 
   async create(data: CreateExchangeRateDTO) {
     return this.db.exchangeRate.create({
@@ -47,10 +45,7 @@ export class ExchangeRateRepository {
     });
   }
 
-  async findByCurrencies(
-    baseCurrencyId: string,
-    quoteCurrencyId: string
-  ) {
+  async findByCurrencies(baseCurrencyId: string, quoteCurrencyId: string) {
     return this.db.exchangeRate.findUnique({
       where: {
         baseCurrencyId_quoteCurrencyId: {
@@ -61,10 +56,7 @@ export class ExchangeRateRepository {
     });
   }
 
-  async update(
-    id: string,
-    data: UpdateExchangeRateDTO
-  ) {
+  async update(id: string, data: UpdateExchangeRateDTO) {
     return this.db.exchangeRate.update({
       where: { id },
       data,

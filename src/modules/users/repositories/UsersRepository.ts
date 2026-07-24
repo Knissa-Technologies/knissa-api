@@ -43,9 +43,6 @@ export class UsersRepository {
     });
   }
 
-
-
-
   async findById(id: string) {
     return prisma.user.findUnique({
       where: {
@@ -54,5 +51,3 @@ export class UsersRepository {
     });
   }
 }
-
-

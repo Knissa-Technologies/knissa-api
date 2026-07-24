@@ -7,11 +7,6 @@ const paymentRoutes = Router();
 
 const paymentController = new PaymentController();
 
-paymentRoutes.post(
-    "/",
-    authMiddleware,
-    paymentController.create
-);
-
+paymentRoutes.post("/", authMiddleware, paymentController.create);
 
 export default paymentRoutes;

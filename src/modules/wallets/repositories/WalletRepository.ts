@@ -2,8 +2,6 @@ import { Prisma, PrismaClient } from "@prisma/client";
 
 import { prisma } from "../../../infra/database/prisma.js";
 
-
-
 type PrismaExecutor = PrismaClient | Prisma.TransactionClient;
 
 interface CreateWalletDTO {
@@ -13,9 +11,7 @@ interface CreateWalletDTO {
 }
 
 export class WalletRepository {
-  constructor(
-    private readonly db: PrismaExecutor = prisma
-  ) { }
+  constructor(private readonly db: PrismaExecutor = prisma) {}
 
   async create(data: CreateWalletDTO) {
     return this.db.wallet.create({
@@ -72,36 +68,27 @@ export class WalletRepository {
     });
   }
 
-
-
-  async updateBalanceByAmount(
-    id: string,
-    amount: Prisma.Decimal | number
-) {
+  async updateBalanceByAmount(id: string, amount: Prisma.Decimal | number) {
     return this.db.wallet.update({
-        where: { id },
-        data: {
-            balance: {
-                increment: amount,
-            },
+      where: { id },
+      data: {
+        balance: {
+          increment: amount,
         },
+      },
     });
-}
+  }
 
-async decreaseBalance(
-    id: string,
-    amount: Prisma.Decimal | number
-) {
+  async decreaseBalance(id: string, amount: Prisma.Decimal | number) {
     return this.db.wallet.update({
-        where: { id },
-        data: {
-            balance: {
-                decrement: amount,
-            },
+      where: { id },
+      data: {
+        balance: {
+          decrement: amount,
         },
+      },
     });
-}
-
+  }
 
   async findCurrencyByCode(code: string) {
     return this.db.currency.findUnique({
@@ -122,10 +109,7 @@ async decreaseBalance(
     });
   }
 
-  async findByUserAndCurrency(
-    userId: string,
-    currencyId: string
-  ) {
+  async findByUserAndCurrency(userId: string, currencyId: string) {
     return this.db.wallet.findUnique({
       where: {
         userId_currencyId: {

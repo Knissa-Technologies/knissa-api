@@ -1,0 +1,6 @@
+apis:
+  knissa:
+    root: ./docs/openapi/openapi.yaml
+
+extends:
+  - recommended

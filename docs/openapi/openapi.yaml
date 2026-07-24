@@ -1,0 +1,1233 @@
+openapi: 3.0.3
+
+info:
+  title: Knissa API
+  version: 1.0.0
+  description: Backend API for the Knissa Financial Platform.
+
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local Development Server
+
+tags:
+  - name: Authentication
+    description: User registration and authentication
+
+  - name: Users
+    description: User management
+
+  - name: Wallets
+    description: Wallet operations
+
+  - name: Payments
+    description: Payment operations
+
+  - name: Exchange
+    description: Currency exchange
+
+  - name: Exchange Rates
+    description: Exchange rate management
+
+  - name: Countries
+    description: Countries
+
+  - name: Currencies
+    description: Currencies
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+
+      summary: Register a new user
+      operationId: registerUser
+
+      description: Creates a new user account.
+
+      security: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+
+      responses:
+        "201":
+          description: User registered successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+
+        "400":
+          description: Validation error
+
+        "409":
+          description: Email already registered
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+
+      summary: Authenticate user
+      operationId: loginUser
+
+      description: Authenticate a user and return a JWT token.
+
+      security: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+
+      responses:
+        "200":
+          description: Authentication successful.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Invalid credentials
+
+  /users:
+    post:
+      tags:
+        - Users
+
+      summary: Create a new user
+      operationId: createUser
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+
+      responses:
+        "201":
+          description: User created successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+        "400":
+          description: Validation error
+
+        "409":
+          description: Email already exists
+
+    get:
+      tags:
+        - Users
+
+      summary: List all users
+      operationId: listUsers
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: List of users.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+        "401":
+          description: Unauthorized
+
+        "403":
+          description: Forbidden
+
+  /users/me:
+    get:
+      tags:
+        - Users
+
+      summary: Get authenticated user
+      operationId: currentUser
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: Authenticated user.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+
+        "401":
+          description: Unauthorized
+
+  /wallets/open-account:
+    post:
+      tags:
+        - Wallets
+
+      summary: Open a wallet account
+      operationId: openWalletAccount
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenWalletRequest"
+
+      responses:
+        "201":
+          description: Wallet created successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+        "409":
+          description: Wallet already exists for this currency
+
+  /wallets/deposit:
+    post:
+      tags:
+        - Wallets
+
+      summary: Deposit funds
+      operationId: depositFunds
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositRequest"
+
+      responses:
+        "200":
+          description: Deposit completed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+  /wallets/withdraw:
+    post:
+      tags:
+        - Wallets
+
+      summary: Withdraw funds
+      operationId: withdrawFunds
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawRequest"
+
+      responses:
+        "200":
+          description: Withdrawal completed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+        "422":
+          description: Insufficient balance
+
+  /wallets/transfer:
+    post:
+      tags:
+        - Wallets
+
+      summary: Transfer funds
+      operationId: transferFunds
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+
+      responses:
+        "200":
+          description: Transfer completed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+        "422":
+          description: Insufficient balance
+
+  /wallets/{accountNumber}/statement:
+    get:
+      tags:
+        - Wallets
+
+      summary: Get wallet statement
+      operationId: walletStatement
+
+      security:
+        - BearerAuth: []
+
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Wallet statement.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementResponse"
+
+        "401":
+          description: Unauthorized
+
+        "404":
+          description: Wallet not found
+
+  /payments:
+    post:
+      tags:
+        - Payments
+
+      summary: Make a payment
+      operationId: createPayment
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+
+      responses:
+        "201":
+          description: Payment created successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+        "422":
+          description: Insufficient balance
+
+  /payments/{id}:
+    get:
+      tags:
+        - Payments
+
+      summary: Get payment details
+      operationId: getPaymentById
+
+      security:
+        - BearerAuth: []
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Payment details.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+
+        "401":
+          description: Unauthorized
+
+        "404":
+          description: Payment not found
+
+  /payments/history:
+    get:
+      tags:
+        - Payments
+
+      summary: List payment history
+      operationId: paymentHistory
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: Payment history.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentListResponse"
+
+        "401":
+          description: Unauthorized
+
+  /exchange:
+    post:
+      tags:
+        - Exchange
+
+      summary: Exchange currency
+      operationId: exchangeCurrency
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRequest"
+
+      responses:
+        "200":
+          description: Exchange completed successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+        "422":
+          description: Insufficient balance
+
+  /exchange/history:
+    get:
+      tags:
+        - Exchange
+
+      summary: Exchange history
+      operationId: exchangeHistory
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: List of exchanges.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeListResponse"
+
+        "401":
+          description: Unauthorized
+
+  /exchange-rates:
+    post:
+      tags:
+        - Exchange Rates
+
+      summary: Create exchange rate
+      operationId: createExchangeRate
+
+      security:
+        - BearerAuth: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateRequest"
+
+      responses:
+        "201":
+          description: Exchange rate created.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateResponse"
+
+        "400":
+          description: Validation error
+
+        "401":
+          description: Unauthorized
+
+    get:
+      tags:
+        - Exchange Rates
+
+      summary: List exchange rates
+      operationId: listExchangeRates
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: List of exchange rates.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRateListResponse"
+
+        "401":
+          description: Unauthorized
+
+  /countries:
+    get:
+      tags:
+        - Countries
+
+      summary: List countries
+      operationId: listCountries
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: List of countries.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryListResponse"
+
+        "401":
+          description: Unauthorized
+
+  /currencies:
+    get:
+      tags:
+        - Currencies
+
+      summary: List currencies
+      operationId: listCurrencies
+
+      security:
+        - BearerAuth: []
+
+      responses:
+        "200":
+          description: List of currencies.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrencyListResponse"
+
+        "401":
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+
+      required:
+        - name
+        - email
+        - password
+
+      properties:
+        name:
+          type: string
+          example: Jean Joseph
+
+        email:
+          type: string
+          format: email
+          example: jean@email.com
+
+        password:
+          type: string
+          format: password
+          example: "12345678"
+
+    RegisterResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        message:
+          type: string
+          example: User registered successfully.
+
+        data:
+          $ref: "#/components/schemas/User"
+
+    LoginRequest:
+      type: object
+
+      required:
+        - email
+        - password
+
+      properties:
+        email:
+          type: string
+          format: email
+          example: jean@email.com
+
+        password:
+          type: string
+          format: password
+          example: "12345678"
+
+    LoginResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: object
+
+          properties:
+            user:
+              $ref: "#/components/schemas/User"
+
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+
+    User:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 6f3d8b2a-1b3e-4f98-a741-94c28f4b95aa
+
+        name:
+          type: string
+          example: Jean Joseph
+
+        email:
+          type: string
+          format: email
+          example: jean@email.com
+
+        role:
+          type: string
+          example: USER
+
+        createdAt:
+          type: string
+          format: date-time
+
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+
+      required:
+        - name
+        - email
+        - password
+
+      properties:
+        name:
+          type: string
+          example: Jean Joseph
+
+        email:
+          type: string
+          format: email
+          example: jean@email.com
+
+        password:
+          type: string
+          format: password
+          example: "12345678"
+
+    UserResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: "#/components/schemas/User"
+
+    UserListResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: "#/components/schemas/User"
+
+    OpenWalletRequest:
+      type: object
+
+      required:
+        - countryId
+        - currencyId
+
+      properties:
+        countryId:
+          type: string
+          format: uuid
+
+        currencyId:
+          type: string
+          format: uuid
+
+    Wallet:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        accountNumber:
+          type: string
+          example: "100000001"
+
+        balance:
+          type: number
+          format: double
+          example: 1500.75
+
+        currency:
+          type: string
+          example: BRL
+
+        status:
+          type: string
+          example: ACTIVE
+
+        createdAt:
+          type: string
+          format: date-time
+
+    WalletResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: "#/components/schemas/Wallet"
+
+    DepositRequest:
+      type: object
+
+      required:
+        - accountNumber
+        - amount
+
+      properties:
+        accountNumber:
+          type: string
+
+        amount:
+          type: number
+          format: double
+          example: 500
+
+    WithdrawRequest:
+      type: object
+
+      required:
+        - accountNumber
+        - amount
+
+      properties:
+        accountNumber:
+          type: string
+
+        amount:
+          type: number
+          format: double
+          example: 250
+
+    TransferRequest:
+      type: object
+
+      required:
+        - fromAccount
+        - toAccount
+        - amount
+
+      properties:
+        fromAccount:
+          type: string
+
+        toAccount:
+          type: string
+
+        amount:
+          type: number
+          format: double
+          example: 100
+
+    TransferResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        message:
+          type: string
+          example: Transfer completed successfully.
+
+    StatementResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            type: object
+
+            properties:
+              id:
+                type: string
+                format: uuid
+
+              type:
+                type: string
+                example: DEPOSIT
+
+              amount:
+                type: number
+                format: double
+
+              createdAt:
+                type: string
+                format: date-time
+
+    PaymentRequest:
+      type: object
+
+      required:
+        - fromAccount
+        - toAccount
+        - amount
+
+      properties:
+        fromAccount:
+          type: string
+          example: "100000001"
+
+        toAccount:
+          type: string
+          example: "100000002"
+
+        amount:
+          type: number
+          format: double
+          example: 250.50
+
+        description:
+          type: string
+          example: Monthly payment
+
+    Payment:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        fromAccount:
+          type: string
+
+        toAccount:
+          type: string
+
+        amount:
+          type: number
+          format: double
+
+        status:
+          type: string
+          example: COMPLETED
+
+        createdAt:
+          type: string
+          format: date-time
+
+    PaymentResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: "#/components/schemas/Payment"
+
+    PaymentListResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: "#/components/schemas/Payment"
+
+    ExchangeRequest:
+      type: object
+
+      required:
+        - fromAccount
+        - toAccount
+        - amount
+
+      properties:
+        fromAccount:
+          type: string
+          example: "100000001"
+
+        toAccount:
+          type: string
+          example: "100000002"
+
+        amount:
+          type: number
+          format: double
+          example: 100
+
+    Exchange:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        fromCurrency:
+          type: string
+          example: BRL
+
+        toCurrency:
+          type: string
+          example: HTG
+
+        amount:
+          type: number
+          format: double
+
+        convertedAmount:
+          type: number
+          format: double
+
+        exchangeRate:
+          type: number
+          format: double
+
+        createdAt:
+          type: string
+          format: date-time
+
+    ExchangeResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: "#/components/schemas/Exchange"
+
+    ExchangeListResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: "#/components/schemas/Exchange"
+
+    ExchangeRateRequest:
+      type: object
+
+      required:
+        - fromCurrency
+        - toCurrency
+        - rate
+
+      properties:
+        fromCurrency:
+          type: string
+          example: BRL
+
+        toCurrency:
+          type: string
+          example: HTG
+
+        rate:
+          type: number
+          format: double
+          example: 24.50
+
+    ExchangeRate:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        fromCurrency:
+          type: string
+
+        toCurrency:
+          type: string
+
+        rate:
+          type: number
+          format: double
+
+        createdAt:
+          type: string
+          format: date-time
+
+    ExchangeRateResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          $ref: "#/components/schemas/ExchangeRate"
+
+    ExchangeRateListResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: "#/components/schemas/ExchangeRate"
+
+    Country:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        name:
+          type: string
+          example: Brazil
+
+        code:
+          type: string
+          example: BR
+
+        currency:
+          type: string
+          example: BRL
+
+    CountryListResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: "#/components/schemas/Country"
+
+    Currency:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        name:
+          type: string
+          example: Brazilian Real
+
+        code:
+          type: string
+          example: BRL
+
+        symbol:
+          type: string
+          example: R$
+
+    CurrencyListResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: array
+
+          items:
+            $ref: "#/components/schemas/Currency"

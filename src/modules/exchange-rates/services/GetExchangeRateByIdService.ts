@@ -8,8 +8,7 @@ export class GetExchangeRateByIdService {
   }
 
   async execute(id: string) {
-    const exchangeRate =
-      await this.exchangeRateRepository.findById(id);
+    const exchangeRate = await this.exchangeRateRepository.findById(id);
 
     if (!exchangeRate) {
       throw new Error("Exchange rate not found.");

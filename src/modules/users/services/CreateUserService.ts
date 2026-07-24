@@ -10,8 +10,8 @@ import { OpenAccountService } from "../../wallets/services/OpenAccountService.js
 export class CreateUserService {
   constructor(
     private readonly usersRepository = new UsersRepository(),
-    private readonly openAccountService = new OpenAccountService()
-  ) { }
+    private readonly openAccountService = new OpenAccountService(),
+  ) {}
 
   async execute(data: CreateUserDTO) {
     const input = createUserSchema.parse(data);
@@ -29,15 +29,9 @@ export class CreateUserService {
       password: passwordHash,
     });
 
-    await this.openAccountService.execute(
-      user.id,
-      input.countryId
-    );
+    await this.openAccountService.execute(user.id, input.countryId);
 
-    const {
-      passwordHash: passwordHashFromDb,
-      ...userWithoutPassword
-    } = user;
+    const { passwordHash: passwordHashFromDb, ...userWithoutPassword } = user;
 
     return userWithoutPassword;
   }

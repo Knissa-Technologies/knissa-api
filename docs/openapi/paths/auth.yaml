@@ -1,0 +1,111 @@
+/auth/register:
+  post:
+    tags:
+      - Authentication
+
+    summary: Register a new user
+
+    description: |
+      Creates a new user account.
+
+      After registration, the system automatically creates
+      the user's first wallet.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RegisterRequest"
+
+    responses:
+      "201":
+        description: User registered successfully.
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterResponse"
+
+            example:
+              success: true
+              message: User registered successfully.
+              data:
+                id: "b933b0b2-1e6c-49a7-9e53-26a09baf4d20"
+                firstName: Jean
+                lastName: Bauzil
+                email: jean@example.com
+                phone: "+5547999999999"
+                emailVerified: false
+                phoneVerified: false
+                role: CUSTOMER
+                status: ACTIVE
+                countryId: "9df677d4-fcad-4c31-b82f-f4ebca53d761"
+                createdAt: "2026-07-23T20:10:00Z"
+                updatedAt: "2026-07-23T20:10:00Z"
+
+      "400":
+        description: Validation error
+
+      "409":
+        description: Email already registered
+
+      "500":
+        description: Internal server error
+
+/auth/login:
+  post:
+    tags:
+      - Authentication
+
+    summary: Authenticate user
+
+    description: |
+      Authenticates a user using email and password.
+
+      Returns a JWT access token.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/LoginRequest"
+
+    responses:
+      "200":
+        description: Authentication successful.
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginResponse"
+
+            example:
+              success: true
+              data:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                user:
+                  id: "b933b0b2-1e6c-49a7-9e53-26a09baf4d20"
+                  firstName: Jean
+                  lastName: Bauzil
+                  email: jean@example.com
+                  phone: "+5547999999999"
+                  emailVerified: false
+                  phoneVerified: false
+                  role: CUSTOMER
+                  status: ACTIVE
+                  countryId: "9df677d4-fcad-4c31-b82f-f4ebca53d761"
+                  createdAt: "2026-07-23T20:10:00Z"
+                  updatedAt: "2026-07-23T20:10:00Z"
+
+      "400":
+        description: Validation error
+
+      "401":
+        description: Invalid credentials
+
+      "500":
+        description: Internal server error

@@ -17,7 +17,6 @@ export class CurrencyRepository {
     });
   }
 
-
   async findAll() {
     return prisma.currency.findMany({
       where: {

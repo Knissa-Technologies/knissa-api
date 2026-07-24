@@ -25,10 +25,7 @@ export class WalletController {
 
     const service = new OpenAccountService();
 
-    const wallet = await service.execute(
-      data.userId,
-      data.countryId
-    );
+    const wallet = await service.execute(data.userId, data.countryId);
 
     return res.status(201).json({
       success: true,

@@ -9,7 +9,6 @@ export class CountryRepository {
     });
   }
 
-
   async findAll() {
     return prisma.country.findMany({
       orderBy: {

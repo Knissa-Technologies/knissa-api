@@ -8,9 +8,7 @@ import { AuthRepository } from "../repositories/AuthRepository.js";
 import { loginSchema } from "../validators/login.schema.js";
 
 export class LoginService {
-  constructor(
-    private readonly authRepository = new AuthRepository()
-  ) {}
+  constructor(private readonly authRepository = new AuthRepository()) {}
 
   async execute(data: LoginDTO) {
     // Valida os dados de entrada
@@ -26,7 +24,7 @@ export class LoginService {
     // Verifica a senha
     const passwordIsValid = await argon2.verify(
       user.passwordHash,
-      input.password
+      input.password,
     );
 
     if (!passwordIsValid) {
@@ -49,7 +47,7 @@ export class LoginService {
       jwtSecret,
       {
         expiresIn: process.env.JWT_EXPIRES_IN || "15m",
-      }
+      },
     );
 
     // Remove o hash da senha da resposta

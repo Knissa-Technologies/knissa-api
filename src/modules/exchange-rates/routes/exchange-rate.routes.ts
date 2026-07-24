@@ -12,14 +12,8 @@ exchangeRateRoutes.get("/", exchangeRateController.findAll);
 
 exchangeRateRoutes.get("/:id", exchangeRateController.findById);
 
-exchangeRateRoutes.patch(
-  "/:id",
-  exchangeRateController.update
-);
+exchangeRateRoutes.patch("/:id", exchangeRateController.update);
 
-exchangeRateRoutes.delete(
-  "/:id",
-  exchangeRateController.delete
-);
+exchangeRateRoutes.delete("/:id", exchangeRateController.delete);
 
 export default exchangeRateRoutes;

@@ -8,11 +8,7 @@ interface TokenPayload {
   role: string;
 }
 
-export function authMiddleware(
-  req: Request,
-  _: Response,
-  next: NextFunction
-) {
+export function authMiddleware(req: Request, _: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -26,10 +22,7 @@ export function authMiddleware(
   }
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as TokenPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
 
     req.user = {
       id: decoded.sub,

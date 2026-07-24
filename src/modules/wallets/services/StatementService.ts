@@ -6,21 +6,22 @@ import { TransactionRepository } from "../../transactions/repositories/Transacti
 export class StatementService {
   constructor(
     private readonly walletRepository = new WalletRepository(),
-    private readonly transactionRepository = new TransactionRepository()
+    private readonly transactionRepository = new TransactionRepository(),
   ) {}
 
   async execute(accountNumber: string) {
     const wallet =
       await this.walletRepository.findByAccountNumberWithCurrency(
-        accountNumber
+        accountNumber,
       );
 
     if (!wallet) {
       throw new AppError("Wallet not found.", 404);
     }
 
-    const transactions =
-      await this.transactionRepository.findByWallet(wallet.id);
+    const transactions = await this.transactionRepository.findByWallet(
+      wallet.id,
+    );
 
     return {
       wallet: {

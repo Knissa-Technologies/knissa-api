@@ -13,6 +13,11 @@ import exchangeRoutes from "./modules/exchange/routes/exchange.routes.js";
 
 import { errorHandler } from "./shared/middlewares/errorHandler.js";
 
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+
+const swaggerDocument = YAML.load("./docs/openapi/openapi.yaml");
+
 const app = express();
 
 // Middlewares
@@ -28,6 +33,8 @@ app.use("/wallets", walletRoutes);
 app.use("/exchange-rates", exchangeRateRoutes);
 app.use("/payments", paymentRoutes);
 app.use("/exchange", exchangeRoutes);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Health Check
 app.get("/", (_req, res) => {

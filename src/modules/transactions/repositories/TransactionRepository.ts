@@ -27,9 +27,7 @@ interface CreateTransactionDTO {
 }
 
 export class TransactionRepository {
-  constructor(
-    private readonly db: PrismaExecutor = prisma
-  ) {}
+  constructor(private readonly db: PrismaExecutor = prisma) {}
 
   async create(data: CreateTransactionDTO) {
     return this.db.transaction.create({

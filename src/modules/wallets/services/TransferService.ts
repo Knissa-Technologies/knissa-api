@@ -1,7 +1,4 @@
-import {
-  LedgerEntryType,
-  TransactionType,
-} from "@prisma/client";
+import { LedgerEntryType, TransactionType } from "@prisma/client";
 
 import { prisma } from "../../../infra/database/prisma.js";
 import { AppError } from "../../../shared/errors/AppError.js";
@@ -17,17 +14,16 @@ import { TransferDTO } from "../dto/TransferDTO.js";
 export class TransferService {
   async execute(data: TransferDTO) {
     const originWallet = await new WalletRepository().findByAccountNumber(
-      data.fromAccount
+      data.fromAccount,
     );
 
     if (!originWallet) {
       throw new AppError("Origin wallet not found.", 404);
     }
 
-    const destinationWallet =
-      await new WalletRepository().findByAccountNumber(
-        data.toAccount
-      );
+    const destinationWallet = await new WalletRepository().findByAccountNumber(
+      data.toAccount,
+    );
 
     if (!destinationWallet) {
       throw new AppError("Destination wallet not found.", 404);
@@ -36,14 +32,14 @@ export class TransferService {
     if (originWallet.id === destinationWallet.id) {
       throw new AppError(
         "Origin and destination wallets must be different.",
-        400
+        400,
       );
     }
 
     if (originWallet.currencyId !== destinationWallet.currencyId) {
       throw new AppError(
         "Transfers between different currencies are not allowed.",
-        400
+        400,
       );
     }
 
@@ -64,38 +60,36 @@ export class TransferService {
       // Debita origem
       await walletRepository.updateBalance(
         originWallet.id,
-        Number(originWallet.balance) - data.amount
+        Number(originWallet.balance) - data.amount,
       );
 
       // Credita destino
       await walletRepository.updateBalance(
         destinationWallet.id,
-        Number(destinationWallet.balance) + data.amount
+        Number(destinationWallet.balance) + data.amount,
       );
 
       // Transaction de saída
-      const debitTransaction =
-        await transactionRepository.create({
-          walletId: originWallet.id,
-          currencyId: originWallet.currencyId,
-          type: TransactionType.TRANSFER,
-          amount: data.amount,
-          netAmount: data.amount,
-          description: `Transfer to ${destinationWallet.accountNumber}`,
-          reference: debitReference,
-        });
+      const debitTransaction = await transactionRepository.create({
+        walletId: originWallet.id,
+        currencyId: originWallet.currencyId,
+        type: TransactionType.TRANSFER,
+        amount: data.amount,
+        netAmount: data.amount,
+        description: `Transfer to ${destinationWallet.accountNumber}`,
+        reference: debitReference,
+      });
 
       // Transaction de entrada
-      const creditTransaction =
-        await transactionRepository.create({
-          walletId: destinationWallet.id,
-          currencyId: destinationWallet.currencyId,
-          type: TransactionType.TRANSFER,
-          amount: data.amount,
-          netAmount: data.amount,
-          description: `Transfer from ${originWallet.accountNumber}`,
-          reference: creditReference,
-        });
+      const creditTransaction = await transactionRepository.create({
+        walletId: destinationWallet.id,
+        currencyId: destinationWallet.currencyId,
+        type: TransactionType.TRANSFER,
+        amount: data.amount,
+        netAmount: data.amount,
+        description: `Transfer from ${originWallet.accountNumber}`,
+        reference: creditReference,
+      });
 
       // Ledger débito
       await ledgerRepository.create({
@@ -118,6 +112,6 @@ export class TransferService {
       success: true,
       reference: transferReference,
       message: "Transfer completed successfully.",
-    }
-  };
+    };
+  }
 }

@@ -1,4 +1,3 @@
-
 # ADR-003: Financial Core
 
 - **Status:** Accepted

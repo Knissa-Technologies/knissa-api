@@ -7,10 +7,6 @@ const exchangeRoutes = Router();
 
 const exchangeController = new ExchangeController();
 
-exchangeRoutes.post(
-    "/",
-    authMiddleware,
-    exchangeController.create
-);
+exchangeRoutes.post("/", authMiddleware, exchangeController.create);
 
 export default exchangeRoutes;

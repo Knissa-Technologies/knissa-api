@@ -7,20 +7,14 @@ const usersRoutes = Router();
 const usersController = new UsersController();
 
 // Criar usuário
-usersRoutes.post("/", (req, res) =>
-    usersController.create(req, res)
-);
+usersRoutes.post("/", (req, res) => usersController.create(req, res));
 
 // Listar usuários
-usersRoutes.get("/", (req, res) =>
-    usersController.list(req, res)
-);
+usersRoutes.get("/", (req, res) => usersController.list(req, res));
 
 // Perfil do usuário autenticado
-usersRoutes.get(
-    "/me",
-    authMiddleware,
-    (req, res) => usersController.me(req, res)
+usersRoutes.get("/me", authMiddleware, (req, res) =>
+  usersController.me(req, res),
 );
 
 export { usersRoutes };

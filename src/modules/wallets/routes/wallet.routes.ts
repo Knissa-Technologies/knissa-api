@@ -12,19 +12,12 @@ walletRoutes.post("/deposit", walletController.deposit);
 
 walletRoutes.post("/transfer", transferController.handle);
 
-walletRoutes.get(
-  "/:accountNumber/statement",
-  walletController.statement
-);
+walletRoutes.get("/:accountNumber/statement", walletController.statement);
 
-
-walletRoutes.post(
-  "/open-account",
-  walletController.openAccount
-);
+walletRoutes.post("/open-account", walletController.openAccount);
 
 walletRoutes.post("/withdraw", (req, res) =>
-  walletController.withdraw(req, res)
+  walletController.withdraw(req, res),
 );
 
 export default walletRoutes;

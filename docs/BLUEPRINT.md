@@ -116,13 +116,13 @@ Global Expansion
 
 The first version of the platform will support:
 
-| Currency | Code |
-|-----------|------|
-| Haitian Gourde | HTG |
-| Brazilian Real | BRL |
-| US Dollar | USD |
-| Euro | EUR |
-| Canadian Dollar | CAD |
+| Currency        | Code |
+| --------------- | ---- |
+| Haitian Gourde  | HTG  |
+| Brazilian Real  | BRL  |
+| US Dollar       | USD  |
+| Euro            | EUR  |
+| Canadian Dollar | CAD  |
 
 The architecture must allow adding new currencies without code changes.
 

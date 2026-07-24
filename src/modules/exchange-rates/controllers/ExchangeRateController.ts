@@ -9,8 +9,6 @@ import { updateExchangeRateSchema } from "../validators/updateExchangeRate.schem
 import { DeleteExchangeRateService } from "../services/DeleteExchangeRateService.js";
 
 export class ExchangeRateController {
-
-
   async findAll(req: Request, res: Response) {
     try {
       const service = new GetAllExchangeRatesService();
@@ -28,7 +26,6 @@ export class ExchangeRateController {
       });
     }
   }
-
 
   async findById(req: Request, res: Response) {
     try {
@@ -78,10 +75,7 @@ export class ExchangeRateController {
     }
   }
 
-  async update(
-    req: Request<{ id: string }>,
-    res: Response
-  ) {
+  async update(req: Request<{ id: string }>, res: Response) {
     try {
       const { id } = req.params;
 
@@ -104,10 +98,7 @@ export class ExchangeRateController {
     }
   }
 
-  async delete(
-    req: Request<{ id: string }>,
-    res: Response
-  ) {
+  async delete(req: Request<{ id: string }>, res: Response) {
     try {
       const { id } = req.params;
 
@@ -126,5 +117,4 @@ export class ExchangeRateController {
       });
     }
   }
-
 }

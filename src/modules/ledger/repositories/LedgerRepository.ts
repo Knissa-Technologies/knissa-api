@@ -1,8 +1,4 @@
-import {
-  LedgerEntryType,
-  Prisma,
-  PrismaClient,
-} from "@prisma/client";
+import { LedgerEntryType, Prisma, PrismaClient } from "@prisma/client";
 
 import { prisma } from "../../../infra/database/prisma.js";
 
@@ -16,9 +12,7 @@ interface CreateLedgerEntryDTO {
 }
 
 export class LedgerRepository {
-  constructor(
-    private readonly db: PrismaExecutor = prisma
-  ) {}
+  constructor(private readonly db: PrismaExecutor = prisma) {}
 
   async create(data: CreateLedgerEntryDTO) {
     return this.db.ledgerEntry.create({

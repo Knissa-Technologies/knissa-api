@@ -11,8 +11,8 @@ import { OpenAccountService } from "../../wallets/services/OpenAccountService.js
 export class RegisterService {
   constructor(
     private readonly authRepository = new AuthRepository(),
-    private readonly openAccountService = new OpenAccountService()
-  ) { }
+    private readonly openAccountService = new OpenAccountService(),
+  ) {}
 
   async execute(data: RegisterDTO) {
     // Validação
@@ -20,7 +20,7 @@ export class RegisterService {
 
     // Verifica se o e-mail já existe
     const userAlreadyExists = await this.authRepository.findByEmail(
-      input.email
+      input.email,
     );
 
     if (userAlreadyExists) {
@@ -44,10 +44,7 @@ export class RegisterService {
     console.log("✅ User created:", user.id);
     console.log("📌 Opening wallet...");
 
-    await this.openAccountService.execute(
-      user.id,
-      input.countryId
-    );
+    await this.openAccountService.execute(user.id, input.countryId);
 
     console.log("✅ Wallet created");
 

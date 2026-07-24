@@ -10,18 +10,11 @@ export class CreateExchangeRateService {
   }
 
   async execute(data: CreateExchangeRateDTO) {
-    const {
-      baseCurrencyId,
-      quoteCurrencyId,
-      rate,
-      source,
-    } = data;
+    const { baseCurrencyId, quoteCurrencyId, rate, source } = data;
 
     // Não permite converter uma moeda para ela mesma
     if (baseCurrencyId === quoteCurrencyId) {
-      throw new Error(
-        "Base currency and quote currency cannot be the same."
-      );
+      throw new Error("Base currency and quote currency cannot be the same.");
     }
 
     // Verifica se a moeda base existe
@@ -47,16 +40,13 @@ export class CreateExchangeRateService {
     }
 
     // Verifica se a taxa já existe
-    const existingRate =
-      await this.exchangeRateRepository.findByCurrencies(
-        baseCurrencyId,
-        quoteCurrencyId
-      );
+    const existingRate = await this.exchangeRateRepository.findByCurrencies(
+      baseCurrencyId,
+      quoteCurrencyId,
+    );
 
     if (existingRate) {
-      throw new Error(
-        "Exchange rate already exists for these currencies."
-      );
+      throw new Error("Exchange rate already exists for these currencies.");
     }
 
     // Cria a taxa de câmbio
