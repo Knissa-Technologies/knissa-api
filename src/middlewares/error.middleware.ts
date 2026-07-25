@@ -9,11 +9,13 @@ export function errorMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  // Evita aviso do TypeScript sobre parâmetro não utilizado
+  // Evita aviso do TypeScript
   void req;
   void next;
 
-  // Erros do Zod
+  // ==========================================
+  // Erros de validação (Zod)
+  // ==========================================
   if (error instanceof ZodError) {
     return res.status(422).json({
       success: false,
@@ -26,7 +28,9 @@ export function errorMiddleware(
     });
   }
 
+  // ==========================================
   // Erros da aplicação
+  // ==========================================
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
       success: false,
@@ -35,7 +39,9 @@ export function errorMiddleware(
     });
   }
 
+  // ==========================================
   // Erros inesperados
+  // ==========================================
   console.error(error);
 
   return res.status(500).json({

@@ -1,9 +1,18 @@
-import { beforeAll, afterAll } from "vitest";
+import { afterAll, beforeEach } from "vitest";
+import { prisma } from "../src/infra/database/prisma";
 
-beforeAll(async () => {
-  // Executado antes de todos os testes
+beforeEach(async () => {
+  await prisma.refreshToken.deleteMany();
+
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        endsWith: "@test.com",
+      },
+    },
+  });
 });
 
 afterAll(async () => {
-  // Executado após todos os testes
+  await prisma.$disconnect();
 });
