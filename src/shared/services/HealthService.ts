@@ -1,4 +1,4 @@
-import { prisma } from "../database/prisma.js";
+import { prisma } from "../../infra/database/prisma.js";
 import { redis } from "../database/redis.js";
 
 export class HealthService {
@@ -32,9 +32,7 @@ export class HealthService {
       redis: redisStatus,
 
       uptime: process.uptime(),
-
       responseTime: `${Date.now() - startedAt}ms`,
-
       timestamp: new Date().toISOString(),
     };
   }
