@@ -11,7 +11,7 @@ export class GetProfileService {
       throw new AppError("User not found.", 404);
     }
 
-    const { password, ...safeUser } = user;
+    const { passwordHash, ...safeUser } = user;
 
     return safeUser;
   }

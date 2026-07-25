@@ -1,12 +1,24 @@
 import { Router } from "express";
 
 import { AuthController } from "./controllers/AuthController.js";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
 
-const authRoutes = Router();
-const controller = new AuthController();
+const router = Router();
 
-authRoutes.post("/register", (req, res) => controller.register(req, res));
+const authController = new AuthController();
 
-authRoutes.post("/login", (req, res) => controller.login(req, res));
+router.post("/register", authController.register.bind(authController));
 
-export { authRoutes };
+router.post("/login", authController.login.bind(authController));
+
+router.post("/refresh", authController.refresh.bind(authController));
+
+router.post("/logout", authController.logout.bind(authController));
+
+router.post(
+  "/logout-all",
+  authMiddleware,
+  authController.logoutAll.bind(authController),
+);
+
+export default router;

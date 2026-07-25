@@ -29,23 +29,25 @@ export class AuthRepository {
   }
 
   async findByEmail(email: string) {
-    return prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
-  }
+    console.log("Email recebido:", JSON.stringify(email));
 
-  async findById(id: string) {
-    return prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
+    const users = await prisma.user.findMany();
+
+    console.log("Todos os usuários:");
+    console.dir(users, { depth: null });
+
+    const user = users.find(
+      (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase(),
+    );
+
+    console.log("Usuário encontrado pelo JavaScript:", user);
+
+    return user ?? null;
   }
 
   async createRefreshToken(data: {
     userId: string;
+    jti: string;
     tokenHash: string;
     expiresAt: Date;
   }) {
@@ -54,11 +56,13 @@ export class AuthRepository {
     });
   }
 
-  async findRefreshToken(tokenHash: string) {
-    return prisma.refreshToken.findFirst({
+  async findRefreshTokenByJti(jti: string) {
+    return prisma.refreshToken.findUnique({
       where: {
-        tokenHash,
-        revokedAt: null,
+        jti,
+      },
+      include: {
+        user: true,
       },
     });
   }
@@ -67,6 +71,18 @@ export class AuthRepository {
     return prisma.refreshToken.update({
       where: {
         id,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+  }
+
+  async revokeAllUserTokens(userId: string) {
+    return prisma.refreshToken.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
       },
       data: {
         revokedAt: new Date(),

@@ -1,20 +1,33 @@
 import { Router } from "express";
+import { UserRole } from "@prisma/client";
 
 import { UsersController } from "./controllers/UsersController.js";
-import { authMiddleware } from "../../shared/middlewares/auth.js";
 
-const usersRoutes = Router();
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { authorize } from "../../middlewares/authorize.middleware.js";
+
+const router = Router();
+
 const usersController = new UsersController();
 
-// Criar usuário
-usersRoutes.post("/", (req, res) => usersController.create(req, res));
-
-// Listar usuários
-usersRoutes.get("/", (req, res) => usersController.list(req, res));
-
-// Perfil do usuário autenticado
-usersRoutes.get("/me", authMiddleware, (req, res) =>
-  usersController.me(req, res),
+router.post(
+  "/",
+  authMiddleware,
+  authorize(UserRole.ADMIN),
+  usersController.create.bind(usersController),
 );
 
-export { usersRoutes };
+router.get(
+  "/",
+  authMiddleware,
+  authorize(UserRole.ADMIN),
+  usersController.list.bind(usersController),
+);
+
+router.get(
+  "/me",
+  authMiddleware,
+  usersController.me.bind(usersController),
+);
+
+export default router;

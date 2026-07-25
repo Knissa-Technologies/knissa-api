@@ -2,10 +2,18 @@ import "dotenv/config";
 import { prisma } from "../src/infra/database/prisma";
 
 async function main() {
+  console.log("======================================");
   console.log("🌱 Starting seed...");
+  console.log("======================================");
 
-  // Countries
-  await prisma.country.createMany({
+  console.log("DATABASE_URL:");
+  console.log(process.env.DATABASE_URL);
+
+  const before = await prisma.country.count();
+
+  console.log("\nCountries BEFORE seed:", before);
+
+  const result = await prisma.country.createMany({
     data: [
       {
         name: "Brazil",
@@ -41,48 +49,26 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // Currencies
-  await prisma.currency.createMany({
-    data: [
-      {
-        code: "BRL",
-        name: "Brazilian Real",
-        symbol: "R$",
-        decimals: 2,
-      },
-      {
-        code: "USD",
-        name: "US Dollar",
-        symbol: "$",
-        decimals: 2,
-      },
-      {
-        code: "EUR",
-        name: "Euro",
-        symbol: "€",
-        decimals: 2,
-      },
-      {
-        code: "HTG",
-        name: "Haitian Gourde",
-        symbol: "G",
-        decimals: 2,
-      },
-      {
-        code: "CAD",
-        name: "Canadian Dollar",
-        symbol: "C$",
-        decimals: 2,
-      },
-    ],
-    skipDuplicates: true,
-  });
+  console.log("\ncreateMany result:");
+  console.log(result);
 
+  const afterCount = await prisma.country.count();
+
+  console.log("\nCountries AFTER seed:", afterCount);
+
+  const countries = await prisma.country.findMany();
+
+  console.log("\nCountries inserted:");
+  console.table(countries);
+
+  console.log("\n======================================");
   console.log("✅ Seed completed successfully!");
+  console.log("======================================");
 }
 
 main()
   .catch((error) => {
+    console.error("\n❌ SEED ERROR:");
     console.error(error);
     process.exit(1);
   })

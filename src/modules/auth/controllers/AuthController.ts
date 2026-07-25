@@ -1,29 +1,61 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 
-import { LoginService } from "../services/LoginService.js";
-import { RegisterService } from "../services/RegisterService.js";
+import { AuthService } from "../services/AuthService.js";
 
 export class AuthController {
-  async register(req: Request, res: Response) {
-    const service = new RegisterService();
+  private readonly service = new AuthService();
 
-    const user = await service.execute(req.body);
+  async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await this.service.register(req.body);
 
-    return res.status(201).json({
-      success: true,
-      message: "User registered successfully.",
-      data: user,
-    });
+      return res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
   }
 
-  async login(req: Request, res: Response) {
-    const service = new LoginService();
+  async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await this.service.login(req.body);
 
-    const result = await service.execute(req.body);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-    return res.json({
-      success: true,
-      data: result,
-    });
+  async refresh(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { refreshToken } = req.body;
+
+      const result = await this.service.refresh(refreshToken);
+
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { refreshToken } = req.body;
+
+      await this.service.logout(refreshToken);
+
+      return res.sendStatus(204);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logoutAll(req: Request, res: Response, next: NextFunction) {
+    try {
+      await this.service.logoutAll(req.user!.id);
+
+      return res.sendStatus(204);
+    } catch (error) {
+      next(error);
+    }
   }
 }

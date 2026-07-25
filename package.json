@@ -17,6 +17,7 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "seed:docker": "docker compose exec api npm run seed",
     "docs:lint": "redocly lint docs/openapi/openapi.yaml",
     "docs:build": "redocly bundle docs/openapi/openapi.yaml -o docs/openapi/dist/openapi.yaml",
     "docs:preview": "redocly preview-docs docs/openapi/openapi.yaml"
@@ -57,6 +58,7 @@
     "pg": "^8.22.0",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
+    "redis": "^6.1.0",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0",
     "zod": "^4.4.3"
@@ -78,7 +80,7 @@
     "eslint-plugin-import": "^2.32.0",
     "pino-pretty": "^13.1.3",
     "prettier": "^3.9.6",
-    "prisma": "^7.8.0",
+    "prisma": "^7.9.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.1",
     "typescript": "^5.9.3",

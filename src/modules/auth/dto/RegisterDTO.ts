@@ -6,3 +6,4 @@ export interface RegisterDTO {
   phone?: string;
   countryId: string;
 }
+

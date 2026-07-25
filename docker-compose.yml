@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: knissa
       POSTGRES_USER: knissa
       POSTGRES_PASSWORD: knissa_dev_password
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -20,6 +18,18 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  api:
+    build: .
+    container_name: knissa-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env.docker
+    ports:
+      - "3000:3000"
 
 volumes:
   postgres_data:
