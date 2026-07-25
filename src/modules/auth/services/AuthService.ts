@@ -12,11 +12,12 @@ import {
   getExpirationDate,
 } from "../utils/jwt.js";
 
-import { OpenAccountService } from "../../wallets/services/OpenAccountService.js";
-
 import {
-  AppError,
-} from "../../../shared/errors/AppError.js";
+  ConflictError,
+  UnauthorizedError,
+} from "../../../shared/errors/index.js";
+
+import { OpenAccountService } from "../../wallets/services/OpenAccountService.js";
 
 export class AuthService {
   private readonly repository = new AuthRepository();
@@ -31,7 +32,7 @@ export class AuthService {
     const userExists = await this.repository.findByEmail(data.email);
 
     if (userExists) {
-      throw new AppError("Email already registered.", 409);
+      throw new ConflictError("Email already registered.");
     }
 
     const passwordHash = await argon2.hash(data.password);
@@ -45,11 +46,8 @@ export class AuthService {
       countryId: data.countryId,
     });
 
-    // Open the first wallet automatically
-    await this.openAccountService.execute(
-      user.id,
-      data.countryId,
-    );
+    // Abre automaticamente a primeira carteira
+    await this.openAccountService.execute(user.id, data.countryId);
 
     return this.createSession(user.id, user.role);
   }
@@ -62,7 +60,7 @@ export class AuthService {
     const user = await this.repository.findByEmail(data.email);
 
     if (!user) {
-      throw new AppError("Invalid credentials.", 401);
+      throw new UnauthorizedError("Invalid credentials.");
     }
 
     const passwordIsValid = await argon2.verify(
@@ -71,32 +69,33 @@ export class AuthService {
     );
 
     if (!passwordIsValid) {
-      throw new AppError("Invalid credentials.", 401);
+      throw new UnauthorizedError("Invalid credentials.");
     }
 
     return this.createSession(user.id, user.role);
   }
 
   // =====================================================
-  // REFRESH
+  // REFRESH TOKEN
   // =====================================================
 
   async refresh(refreshToken: string) {
     const payload = verifyRefreshToken(refreshToken);
 
-    const storedToken =
-      await this.repository.findRefreshTokenByJti(payload.jti);
+    const storedToken = await this.repository.findRefreshTokenByJti(
+      payload.jti,
+    );
 
     if (!storedToken) {
-      throw new AppError("Refresh token not found.", 401);
+      throw new UnauthorizedError("Refresh token not found.");
     }
 
     if (storedToken.revokedAt) {
-      throw new AppError("Refresh token revoked.", 401);
+      throw new UnauthorizedError("Refresh token revoked.");
     }
 
     if (storedToken.expiresAt < new Date()) {
-      throw new AppError("Refresh token expired.", 401);
+      throw new UnauthorizedError("Refresh token expired.");
     }
 
     const validToken = await argon2.verify(
@@ -105,7 +104,7 @@ export class AuthService {
     );
 
     if (!validToken) {
-      throw new AppError("Invalid refresh token.", 401);
+      throw new UnauthorizedError("Invalid refresh token.");
     }
 
     await this.repository.revokeRefreshToken(storedToken.id);
@@ -123,8 +122,9 @@ export class AuthService {
   async logout(refreshToken: string) {
     const payload = verifyRefreshToken(refreshToken);
 
-    const storedToken =
-      await this.repository.findRefreshTokenByJti(payload.jti);
+    const storedToken = await this.repository.findRefreshTokenByJti(
+      payload.jti,
+    );
 
     if (!storedToken) {
       return;
@@ -145,19 +145,11 @@ export class AuthService {
   // CREATE SESSION
   // =====================================================
 
-  private async createSession(
-    userId: string,
-    role: string,
-  ) {
-    const accessToken = generateAccessToken(
-      userId,
-      role,
-    );
+  private async createSession(userId: string, role: string) {
+    const accessToken = generateAccessToken(userId, role);
 
-    const {
-      token: refreshToken,
-      jti,
-    } = generateRefreshToken(userId);
+    const { token: refreshToken, jti } =
+      generateRefreshToken(userId);
 
     const tokenHash = await argon2.hash(refreshToken);
 
