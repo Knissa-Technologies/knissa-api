@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+
 import { logger } from "./config/logger.js";
 
 import authRoutes from "./modules/auth/routes.js";
@@ -12,10 +13,9 @@ import walletRoutes from "./modules/wallets/routes.js";
 import paymentRoutes from "./modules/payments/routes.js";
 import exchangeRoutes from "./modules/exchange/routes.js";
 import exchangeRateRoutes from "./modules/exchange-rates/routes.js";
-import { errorMiddleware } from "./middlewares/error.middleware.js";
 
 import { HealthController } from "./shared/controllers/HealthController.js";
-
+import { errorMiddleware } from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -84,8 +84,6 @@ app.use("/exchange", exchangeRoutes);
 
 app.use("/exchange-rates", exchangeRateRoutes);
 
-app.use(errorMiddleware);
-
 // ======================================================
 // Route Not Found
 // ======================================================
@@ -98,9 +96,9 @@ app.use((_req, res) => {
 });
 
 // ======================================================
-// Error Handler
+// Global Error Handler
 // ======================================================
 
-
+app.use(errorMiddleware);
 
 export default app;

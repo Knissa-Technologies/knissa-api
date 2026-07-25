@@ -1,19 +1,18 @@
 import "dotenv/config";
-import { prisma } from "../src/infra/database/prisma";
+import { prisma } from "../src/infra/database/prisma.js";
 
 async function main() {
   console.log("======================================");
-  console.log("🌱 Starting seed...");
+  console.log("🌱 Starting Knissa Seed...");
   console.log("======================================");
 
-  console.log("DATABASE_URL:");
-  console.log(process.env.DATABASE_URL);
+  // =====================================================
+  // COUNTRIES
+  // =====================================================
 
-  const before = await prisma.country.count();
+  console.log("\n🌍 Seeding countries...");
 
-  console.log("\nCountries BEFORE seed:", before);
-
-  const result = await prisma.country.createMany({
+  await prisma.country.createMany({
     data: [
       {
         name: "Brazil",
@@ -49,26 +48,54 @@ async function main() {
     skipDuplicates: true,
   });
 
-  console.log("\ncreateMany result:");
-  console.log(result);
+  console.table(await prisma.country.findMany());
 
-  const afterCount = await prisma.country.count();
+  // =====================================================
+  // CURRENCIES
+  // =====================================================
 
-  console.log("\nCountries AFTER seed:", afterCount);
+  console.log("\n💰 Seeding currencies...");
 
-  const countries = await prisma.country.findMany();
+  await prisma.currency.createMany({
+    data: [
+      {
+        code: "BRL",
+        name: "Brazilian Real",
+        symbol: "R$",
+      },
+      {
+        code: "USD",
+        name: "US Dollar",
+        symbol: "$",
+      },
+      {
+        code: "HTG",
+        name: "Haitian Gourde",
+        symbol: "G",
+      },
+      {
+        code: "CAD",
+        name: "Canadian Dollar",
+        symbol: "C$",
+      },
+      {
+        code: "EUR",
+        name: "Euro",
+        symbol: "€",
+      },
+    ],
+    skipDuplicates: true,
+  });
 
-  console.log("\nCountries inserted:");
-  console.table(countries);
+  console.table(await prisma.currency.findMany());
 
   console.log("\n======================================");
-  console.log("✅ Seed completed successfully!");
+  console.log("✅ Knissa seed completed successfully!");
   console.log("======================================");
 }
 
 main()
   .catch((error) => {
-    console.error("\n❌ SEED ERROR:");
     console.error(error);
     process.exit(1);
   })
