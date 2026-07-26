@@ -1,11 +1,24 @@
-import jwt, { type SignOptions } from "jsonwebtoken";
+import jwt, {
+  JsonWebTokenError,
+  TokenExpiredError,
+  type SignOptions,
+} from "jsonwebtoken";
 import { randomUUID } from "node:crypto";
 
 import { env } from "../../../config/env.js";
+
+import {
+  UnauthorizedError,
+} from "../../../shared/errors/index.js";
+
 import type {
   AccessTokenPayload,
   RefreshTokenPayload,
 } from "../types/JwtPayload.js";
+
+// =====================================================
+// ACCESS TOKEN
+// =====================================================
 
 export function generateAccessToken(
   userId: string,
@@ -20,6 +33,10 @@ export function generateAccessToken(
     expiresIn: env.JWT_EXPIRES_IN,
   } as SignOptions);
 }
+
+// =====================================================
+// REFRESH TOKEN
+// =====================================================
 
 export function generateRefreshToken(userId: string) {
   const jti = randomUUID();
@@ -39,20 +56,57 @@ export function generateRefreshToken(userId: string) {
   };
 }
 
+// =====================================================
+// VERIFY REFRESH TOKEN
+// =====================================================
+
 export function verifyRefreshToken(
   token: string,
 ): RefreshTokenPayload {
-  return jwt.verify(
-    token,
-    env.REFRESH_TOKEN_SECRET,
-  ) as RefreshTokenPayload;
+  try {
+    return jwt.verify(
+      token,
+      env.REFRESH_TOKEN_SECRET,
+    ) as RefreshTokenPayload;
+  } catch (error) {
+    if (
+      error instanceof JsonWebTokenError ||
+      error instanceof TokenExpiredError
+    ) {
+      throw new UnauthorizedError("Invalid refresh token.");
+    }
+
+    throw error;
+  }
 }
+
+// =====================================================
+// VERIFY ACCESS TOKEN
+// =====================================================
 
 export function verifyAccessToken(
   token: string,
 ): AccessTokenPayload {
-  return jwt.verify(token, env.JWT_SECRET) as AccessTokenPayload;
+  try {
+    return jwt.verify(
+      token,
+      env.JWT_SECRET,
+    ) as AccessTokenPayload;
+  } catch (error) {
+    if (
+      error instanceof JsonWebTokenError ||
+      error instanceof TokenExpiredError
+    ) {
+      throw new UnauthorizedError("Invalid access token.");
+    }
+
+    throw error;
+  }
 }
+
+// =====================================================
+// TOKEN EXPIRATION
+// =====================================================
 
 export function getExpirationDate(token: string): Date {
   const decoded = jwt.decode(token);

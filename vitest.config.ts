@@ -6,6 +6,10 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.ts"],
+
+    // Executa os arquivos de teste em sequência
+    fileParallelism: false,
+
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

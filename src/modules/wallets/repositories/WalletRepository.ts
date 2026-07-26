@@ -28,12 +28,15 @@ export class WalletRepository {
   }
 
   async findByUserId(userId: string) {
-    return this.db.wallet.findFirst({
+    return this.db.wallet.findMany({
       where: {
         userId,
       },
       include: {
         currency: true,
+      },
+      orderBy: {
+        createdAt: "asc",
       },
     });
   }

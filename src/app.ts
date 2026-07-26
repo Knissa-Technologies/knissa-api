@@ -13,6 +13,7 @@ import walletRoutes from "./modules/wallets/routes.js";
 import paymentRoutes from "./modules/payments/routes.js";
 import exchangeRoutes from "./modules/exchange/routes.js";
 import exchangeRateRoutes from "./modules/exchange-rates/routes.js";
+import transactionRoutes from "./modules/transactions/routes.js";
 
 import { HealthController } from "./shared/controllers/HealthController.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
@@ -83,6 +84,8 @@ app.use("/payments", paymentRoutes);
 app.use("/exchange", exchangeRoutes);
 
 app.use("/exchange-rates", exchangeRateRoutes);
+
+app.use("/transactions", transactionRoutes);
 
 // ======================================================
 // Route Not Found

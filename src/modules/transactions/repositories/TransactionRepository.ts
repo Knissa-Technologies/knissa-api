@@ -65,8 +65,32 @@ export class TransactionRepository {
       where: {
         walletId,
       },
+      include: {
+        currency: true,
+        wallet: {
+          select: {
+            accountNumber: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
+      },
+    });
+  }
+
+  async findByReferenceWithRelations(reference: string) {
+    return this.db.transaction.findUnique({
+      where: {
+        reference,
+      },
+      include: {
+        currency: true,
+        wallet: {
+          select: {
+            accountNumber: true,
+          },
+        },
       },
     });
   }
