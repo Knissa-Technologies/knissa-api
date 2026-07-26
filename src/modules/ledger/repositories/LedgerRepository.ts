@@ -30,8 +30,51 @@ export class LedgerRepository {
       where: {
         transactionId,
       },
+      include: {
+        wallet: {
+          select: {
+            accountNumber: true,
+          },
+        },
+        transaction: true,
+      },
       orderBy: {
         createdAt: "asc",
+      },
+    });
+  }
+
+  async findByWallet(walletId: string) {
+    return this.db.ledgerEntry.findMany({
+      where: {
+        walletId,
+      },
+      include: {
+        transaction: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  async findByWallets(walletIds: string[]) {
+    return this.db.ledgerEntry.findMany({
+      where: {
+        walletId: {
+          in: walletIds,
+        },
+      },
+      include: {
+        wallet: {
+          select: {
+            accountNumber: true,
+          },
+        },
+        transaction: true,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
   }
