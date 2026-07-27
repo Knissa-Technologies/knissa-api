@@ -15,6 +15,7 @@ import exchangeRoutes from "./modules/exchange/routes.js";
 import exchangeRateRoutes from "./modules/exchange-rates/routes.js";
 import transactionRoutes from "./modules/transactions/routes.js";
 import ledgerRoutes from "./modules/ledger/routes.js";
+import countryRoutes from "./modules/countries/routes.js";
 
 import { HealthController } from "./shared/controllers/HealthController.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
@@ -71,7 +72,7 @@ app.get("/health", (req, res) => {
 });
 
 // ======================================================
-// Routes
+// API Routes
 // ======================================================
 
 app.use("/auth", authRoutes);
@@ -89,6 +90,8 @@ app.use("/exchange-rates", exchangeRateRoutes);
 app.use("/transactions", transactionRoutes);
 
 app.use("/ledger", ledgerRoutes);
+
+app.use("/countries", countryRoutes);
 
 // ======================================================
 // Route Not Found

@@ -1,7 +1,7 @@
 # Knissa Blueprint
 
-> **Version:** 1.0  
-> **Status:** Draft  
+> **Version:** 1.0
+> **Status:** Draft
 > **Last Updated:** July 2026
 
 ---
@@ -10,32 +10,40 @@
 
 1. Vision
 2. Mission
-3. Core Principles
-4. Long-Term Goals
-5. Target Markets
-6. Supported Currencies
-7. Core Products
-8. Technical Architecture
-9. Main Modules
-10. Financial Domain
-11. Security Principles
-12. Compliance
-13. Non-Functional Requirements
-14. Future Integrations
-15. Project Structure
-16. Development Principles
-17. Roadmap
-18. Vision Statement
+3. Product Philosophy
+4. Core Principles
+5. Long-Term Goals
+6. Target Markets
+7. Supported Currencies
+8. Core Products
+9. Technical Architecture
+10. Architecture Layers
+11. Main Modules
+12. Domain Boundaries
+13. Financial Domain
+14. Event Flow
+15. API Principles
+16. Security Principles
+17. Compliance
+18. Observability
+19. Non-Functional Requirements
+20. Future Integrations
+21. Project Structure
+22. Development Principles
+23. Engineering Principles
+24. Deployment Strategy
+25. Roadmap
+26. Vision Statement
 
 ---
 
 # 1. Vision
 
-Knissa is a modern digital financial platform built to simplify financial services through secure, scalable and reliable technology.
+Knissa is a financial infrastructure platform designed to power digital wallets, payments, currency exchange, merchant services and future banking integrations.
 
-Our goal is to provide a complete financial ecosystem where users can manage digital accounts, perform domestic and international transfers, exchange currencies, make payments, and connect with financial institutions from different countries.
+The platform is built around an immutable ledger architecture, ensuring financial integrity, auditability and long-term scalability.
 
-Knissa is designed from day one to support millions of users through a robust and maintainable architecture.
+Knissa is designed from day one to support millions of users through secure and maintainable software engineering.
 
 ---
 
@@ -45,7 +53,17 @@ Provide accessible, secure and innovative financial services that connect indivi
 
 ---
 
-# 3. Core Principles
+# 3. Product Philosophy
+
+Knissa is designed as a financial platform rather than a collection of isolated features.
+
+Every new capability must integrate naturally into the platform ecosystem while preserving consistency, security and financial integrity.
+
+Long-term maintainability always takes priority over short-term convenience.
+
+---
+
+# 4. Core Principles
 
 Every decision in Knissa must follow these principles:
 
@@ -63,9 +81,7 @@ Every decision in Knissa must follow these principles:
 
 ---
 
-# 4. Long-Term Goals
-
-The long-term vision of Knissa includes:
+# 5. Long-Term Goals
 
 - Digital Accounts
 - Multi-Currency Wallets
@@ -86,7 +102,7 @@ The long-term vision of Knissa includes:
 
 ---
 
-# 5. Target Markets
+# 6. Target Markets
 
 ## Phase 1
 
@@ -112,80 +128,69 @@ Global Expansion
 
 ---
 
-# 6. Supported Currencies
+# 7. Supported Currencies
 
-The first version of the platform will support:
+| Currency | Code |
+|----------|------|
+| Haitian Gourde | HTG |
+| Brazilian Real | BRL |
+| US Dollar | USD |
+| Euro | EUR |
+| Canadian Dollar | CAD |
 
-| Currency        | Code |
-| --------------- | ---- |
-| Haitian Gourde  | HTG  |
-| Brazilian Real  | BRL  |
-| US Dollar       | USD  |
-| Euro            | EUR  |
-| Canadian Dollar | CAD  |
-
-The architecture must allow adding new currencies without code changes.
+The platform architecture must support adding new currencies without requiring application code changes.
 
 ---
 
-# 7. Core Products
+# 8. Core Products
 
-## Digital Account
+## Digital Accounts
 
-- User Registration
+- Registration
 - Authentication
 - User Profile
 - Identity Verification (Future)
 
----
-
 ## Wallet
 
-- Balance
 - Multiple Wallets
 - Multiple Currencies
-- Transaction History
 - Available Balance
 - Reserved Balance
-
----
-
-## Money Exchange
-
-- Currency Conversion
-- Exchange Quotes
-- Exchange Rates
-- Exchange History
-- Exchange Fees
-
----
+- Statements
+- Transaction History
 
 ## Payments
 
-- PIX
-- QR Code
 - Internal Transfers
 - Bank Transfers
-- Payment Providers
+- PIX
+- QR Code
+- Payment Links
+- Merchant Payments
 
----
+## Money Exchange
+
+- Exchange Quotes
+- Currency Conversion
+- Exchange Rates
+- Exchange Fees
+- Exchange History
+
+## Merchant Platform
+
+- Merchant Accounts
+- Business Dashboard
+- Payment Links
+- QR Payments
+- POS Integration
+- Tap to Pay (Future)
 
 ## Open Finance
 
 - Bank Connections
 - Consent Management
-- Financial Data Synchronization
 - Account Aggregation
-
----
-
-## International Transfers
-
-- User-to-User Transfers
-- Cross-border Transfers
-- Future Banking Integrations
-
----
 
 ## Notifications
 
@@ -194,77 +199,109 @@ The architecture must allow adding new currencies without code changes.
 - Push Notifications
 - Transaction Alerts
 
----
-
 ## Administration
 
 - User Management
 - Currency Management
-- Exchange Rate Management
-- System Monitoring
-- Reports
+- Exchange Rates
 - Audit Dashboard
+- Monitoring
+- Reports
 
 ---
 
-# 8. Technical Architecture
+# 9. Technical Architecture
 
 ## Architecture Style
 
 Modular Monolith
 
-Future migration to Microservices will be possible if business growth requires it.
-
----
+Future migration to Microservices will be considered only when justified by business growth and operational needs.
 
 ## Technology Stack
 
-Backend
+### Backend
 
 - Node.js
 - TypeScript
 - Express
 
-Database
+### Database
 
 - PostgreSQL
 
-ORM
+### ORM
 
 - Prisma
 
-Cache
+### Cache
 
 - Redis
 
-Authentication
+### Authentication
 
 - JWT
 - Refresh Tokens
 
-Infrastructure
-
-- Docker
-
-Validation
+### Validation
 
 - Zod
 
-Logging
+### Logging
 
 - Pino
 
-Testing
+### Testing
 
 - Vitest
 - Supertest
 
+### Infrastructure
+
+- Docker
+
 ---
 
-# 9. Main Modules
+# 10. Architecture Layers
 
 ```text
-Auth
+Clients
+
+↓
+
+REST API
+
+↓
+
+Controllers
+
+↓
+
+Services
+
+↓
+
+Repositories
+
+↓
+
+PostgreSQL
+
+↓
+
+Redis
+```
+
+Business rules must remain inside Services.
+
+Repositories are responsible only for persistence.
+
+---
+
+# 11. Main Modules
+
+```text
+Authentication
 
 Users
 
@@ -278,64 +315,181 @@ Ledger
 
 Transactions
 
-Exchange
-
 Payments
 
-OpenFinance
+Exchange
 
-Compliance
+Exchange Rates
 
-Fees
+Merchant
 
 Notifications
 
-Admin
+Compliance
+
+Audit
+
+Cards
+
+Administration
 ```
 
 ---
 
-# 10. Financial Domain
+# 12. Domain Boundaries
 
-The financial engine is based on immutable ledger operations.
+```text
+Identity
+
+↓
+
+Wallet
+
+↓
+
+Ledger
+
+↓
+
+Transactions
+
+↓
+
+Payments
+
+↓
+
+Exchange
+
+↓
+
+Merchant
+
+↓
+
+Notifications
+
+↓
+
+Compliance
+```
+
+Every module owns its own business rules.
+
+Cross-module communication must remain explicit and controlled.
+
+---
+
+# 13. Financial Domain
 
 ```text
 Country
-      │
+
+↓
+
 Currency
-      │
+
+↓
+
 ExchangeRate
-      │
+
+↓
+
 User
-      │
+
+↓
+
 Wallet
-      │
+
+↓
+
 LedgerEntry
-      │
+
+↓
+
 Transaction
-      │
+
+↓
+
 Exchange
-      │
+
+↓
+
 Payment
-      │
+
+↓
+
 Fee
-      │
+
+↓
+
 Notification
-      │
+
+↓
+
 AuditLog
 ```
 
-Every financial operation must generate ledger entries.
+Rules:
 
-Ledger entries are immutable.
-
-Balances are calculated from ledger records.
-
-No financial transaction can be permanently deleted.
+- Ledger entries are immutable.
+- Every financial operation creates ledger entries.
+- Wallet balances are derived from the ledger.
+- Financial data is never physically deleted.
 
 ---
 
-# 11. Security Principles
+# 14. Event Flow
+
+Example: Internal Transfer
+
+```text
+Transfer Request
+
+↓
+
+Validation
+
+↓
+
+Wallet Service
+
+↓
+
+Ledger Entry
+
+↓
+
+Transaction
+
+↓
+
+Notification
+
+↓
+
+Audit Log
+```
+
+The same architecture applies to deposits, withdrawals, payments and currency exchange.
+
+---
+
+# 15. API Principles
+
+The API follows these principles:
+
+- RESTful
+- Stateless
+- OpenAPI First
+- JSON Only
+- Versioned
+- Predictable Error Responses
+- Idempotency Support (Future)
+
+---
+
+# 16. Security Principles
 
 Knissa follows a Security First approach.
 
@@ -345,51 +499,55 @@ Security includes:
 - JWT Authentication
 - Refresh Tokens
 - HTTPS Only
-- Role-Based Access Control
+- RBAC
 - Audit Logs
 - Input Validation
 - Rate Limiting
 - Secure Headers
-- Future Multi-Factor Authentication
+- MFA (Future)
 
 ---
 
-# 12. Compliance
+# 17. Compliance
 
-The platform will be designed to support regulatory requirements.
-
-Future compliance modules include:
+Future compliance modules:
 
 - KYC
 - AML
 - Fraud Detection
 - Risk Analysis
-- Transaction Monitoring
 - Customer Verification
+- Transaction Monitoring
 
 ---
 
-# 13. Non-Functional Requirements
+# 18. Observability
 
-The platform must provide:
+Production environments must include:
+
+- Structured Logging
+- Metrics
+- Distributed Tracing
+- Health Checks
+- Monitoring
+- Alerting
+
+---
+
+# 19. Non-Functional Requirements
 
 - High Performance
 - High Availability
 - Horizontal Scalability
 - Fault Tolerance
-- Monitoring
-- Structured Logging
 - Automated Backups
 - Disaster Recovery
-- Observability
 - Maintainability
 - Extensibility
 
 ---
 
-# 14. Future Integrations
-
-Financial integrations planned for future releases:
+# 20. Future Integrations
 
 Brazil
 
@@ -415,22 +573,16 @@ International
 
 ---
 
-# 15. Project Structure
+# 21. Project Structure
 
 ```text
 src/
 
-config/
-
 core/
-
-infra/
-
-modules/
 
 shared/
 
-utils/
+modules/
 
 tests/
 
@@ -441,14 +593,14 @@ prisma/
 
 ---
 
-# 16. Development Principles
+# 22. Development Principles
 
 Development must follow:
 
 - Clean Code
 - SOLID
 - Separation of Concerns
-- Domain-Driven Design Concepts
+- Domain-Driven Design concepts
 - Modular Architecture
 - Testable Code
 - Documentation First
@@ -458,7 +610,53 @@ Development must follow:
 
 ---
 
-# 17. Roadmap
+# 23. Engineering Principles
+
+Every engineering decision must follow these rules:
+
+- Ledger is the single source of truth.
+- Every financial operation is immutable.
+- Every operation is auditable.
+- Security over convenience.
+- APIs are contract-first.
+- Every feature requires automated tests.
+- Every public endpoint must be documented.
+- Backward compatibility is preferred whenever possible.
+- Simplicity is preferred over unnecessary complexity.
+
+---
+
+# 24. Deployment Strategy
+
+```text
+Developer
+
+↓
+
+GitHub
+
+↓
+
+GitHub Actions
+
+↓
+
+Docker
+
+↓
+
+Production
+
+↓
+
+Monitoring
+```
+
+Production deployments must be automated and repeatable.
+
+---
+
+# 25. Roadmap
 
 ## Version 1
 
@@ -466,56 +664,49 @@ Development must follow:
 - Users
 - Countries
 - Currencies
-- Wallet
-- Transactions
+- Wallets
 - Ledger
-- Multi-Currency
-- Money Exchange
-
----
+- Transactions
+- Payments
+- Exchange
+- Exchange Rates
 
 ## Version 2
 
-- PIX
-- Open Finance
-- QR Code
+- Merchant Accounts
+- QR Code Payments
+- Payment Links
 - Notifications
 - Administration Dashboard
 
----
-
 ## Version 3
 
-- Merchant Accounts
-- Business Accounts
-- Payment Gateway
-- Public API
+- Virtual Cards
+- Tap to Pay
+- Merchant Dashboard
 - Banking Integrations
-
----
+- Public API
 
 ## Version 4
 
 - Mobile Applications
 - International Transfers
-- AI Financial Assistant
 - Financial Analytics
-
----
+- AI Financial Assistant
 
 ## Version 5
 
-- Investment Accounts
-- Virtual Cards
 - Physical Cards
+- Investment Products
 - Merchant Lending
-- Advanced Reporting
 - Business Intelligence
 
 ---
 
-# 18. Vision Statement
+# 26. Vision Statement
 
-Knissa is being built to become a modern financial platform capable of supporting millions of users through secure architecture, reliable financial operations and scalable technology.
+Knissa is being built to become a secure, scalable and globally connected financial infrastructure platform.
 
-Every architectural decision must prioritize security, financial integrity, maintainability and long-term scalability.
+Every architectural decision must prioritize security, financial integrity, reliability and long-term maintainability.
+
+The platform should remain simple to use while being powerful enough to support millions of users, businesses and financial transactions worldwide.

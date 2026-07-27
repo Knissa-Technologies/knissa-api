@@ -2,18 +2,19 @@
 
 - **Status:** Accepted
 - **Date:** July 2026
+- **Decision Makers:** Knissa Engineering Team
 
 ---
 
 # Context
 
-Knissa is a financial platform responsible for managing wallets, transfers, payments, currency exchange and future banking integrations.
+Knissa is a financial infrastructure platform responsible for managing digital wallets, payments, currency exchange, merchant accounts and future banking integrations.
 
-Financial systems require strong guarantees of consistency, traceability and auditability.
+Financial systems require strict guarantees of consistency, traceability, auditability and transactional integrity.
 
-Incorrect balance calculations may lead to financial losses and loss of customer trust.
+Incorrect balance calculations or inconsistent financial records may result in financial losses, regulatory issues and loss of customer trust.
 
-Therefore, the financial core must follow accounting principles instead of storing balances as the source of truth.
+For this reason, Knissa adopts an immutable ledger architecture as the foundation of every financial operation.
 
 ---
 
@@ -21,35 +22,57 @@ Therefore, the financial core must follow accounting principles instead of stori
 
 Knissa adopts an **Immutable Ledger Model**.
 
-Every financial operation must generate one or more ledger entries.
+Every financial operation generates one or more ledger entries.
 
-The ledger is the source of truth for every wallet balance.
+The ledger is the single source of truth.
 
-Wallet balances are derived from ledger records.
+Wallet balances are always derived from ledger records.
+
+Balances are never considered authoritative financial data.
+
+---
+
+# Financial Principles
+
+Every financial operation must follow these principles:
+
+- Immutability
+- Auditability
+- Consistency
+- Traceability
+- Atomicity
+- Idempotency
+- Deterministic calculations
+
+Financial history must never be rewritten.
 
 ---
 
 # Ledger Principles
 
-The ledger follows these principles:
+Ledger entries are:
 
 - Immutable
-- Auditable
-- Consistent
+- Timestamped
 - Traceable
-- Double-entry ready
 - Transactional
+- Financially consistent
 
-Ledger records must never be updated or deleted.
+Ledger entries are never:
 
-Corrections must be performed through compensating transactions.
+- Updated
+- Deleted
+- Reordered
+
+Corrections always generate compensating entries.
 
 ---
 
-# Financial Flow
+# Financial Lifecycle
 
-Every financial operation follows the same lifecycle:
+Every financial operation follows the same lifecycle.
 
+```text
 Request
 
 ↓
@@ -70,11 +93,22 @@ Ledger Entries
 
 ↓
 
-Wallet Balance Update
+Balance Calculation
 
 ↓
 
 Transaction Completed
+
+↓
+
+Notification
+
+↓
+
+Audit
+```
+
+No operation may skip this process.
 
 ---
 
@@ -89,19 +123,25 @@ A user may own multiple wallets.
 
 Example:
 
+```text
 User
 
 ↓
-
-Wallet (BRL)
 
 Wallet (USD)
 
 Wallet (EUR)
 
+Wallet (BRL)
+
 Wallet (HTG)
 
 Wallet (CAD)
+```
+
+Wallets store metadata only.
+
+The financial balance is calculated from ledger entries.
 
 ---
 
@@ -113,31 +153,58 @@ Examples:
 
 - Deposit
 - Withdrawal
-- Transfer
+- Internal Transfer
+- External Transfer
 - Exchange
 - Payment
 - Refund
 - Fee
+- Adjustment
 
-Each transaction produces ledger entries.
+Every transaction creates one or more ledger entries.
+
+Transactions never modify balances directly.
 
 ---
 
 # Ledger Entries
 
-A ledger entry represents the movement of money.
+Ledger entries represent financial movements.
 
-Example fields:
+Typical fields include:
 
 - id
 - walletId
 - transactionId
-- amount
 - currencyId
-- type
+- amount
+- entryType
+- reference
 - createdAt
 
 Ledger entries are immutable.
+
+---
+
+# Balance Calculation
+
+Wallet balances are derived from ledger entries.
+
+Conceptually:
+
+```text
+Balance
+
+=
+
+Credits
+
+-
+
+Debits
+```
+
+Balances may be cached for performance but the ledger always remains the authoritative source.
 
 ---
 
@@ -151,87 +218,164 @@ Currency exchange consists of:
 - Exchange Fee
 - Ledger Entries
 
-Every exchange creates its own transaction.
+Every exchange creates:
+
+- Transaction
+- Ledger Entries
+- Exchange Record
+
+---
+
+# Payments
+
+Payments follow the same financial model.
+
+Examples:
+
+- QR Payments
+- Merchant Payments
+- Payment Links
+- Future PIX
+- Future Banking APIs
+
+Every payment generates ledger entries.
 
 ---
 
 # Fees
 
-Fees are explicit financial records.
+Fees are explicit financial operations.
 
 Examples:
 
-- Exchange Fee
 - Transfer Fee
+- Exchange Fee
+- Merchant Fee
 - Withdrawal Fee
-- Payment Fee
 
-Fees generate their own ledger entries.
+Fees always generate independent ledger entries.
+
+Fees must never be hidden inside another financial record.
+
+---
+
+# Double-Entry Accounting
+
+The platform is designed to support full double-entry accounting.
+
+Future versions may introduce:
+
+- Debit Accounts
+- Credit Accounts
+- General Ledger
+- Accounting Reports
+
+without changing the financial architecture.
+
+---
+
+# Idempotency
+
+Financial operations must support idempotent execution.
+
+Repeated requests using the same idempotency key must never execute the same financial operation twice.
+
+This prevents duplicate transfers and duplicate payments.
 
 ---
 
 # Auditability
 
-Every financial operation must be traceable.
+Every financial operation must be completely traceable.
 
-The system must record:
+The platform records:
 
 - Timestamp
 - User
-- Transaction
 - Wallet
 - Currency
+- Transaction
 - Operation Type
+- Related Ledger Entries
 
-Future versions may include complete audit logs.
+Future versions may include complete audit logs and event history.
 
 ---
 
 # ACID Transactions
 
-All financial operations must execute inside database transactions.
+Every financial operation executes inside a database transaction.
 
-Either:
+Possible outcomes:
 
+```text
 Everything succeeds
 
-or
+OR
 
-Everything fails.
+Everything rolls back
+```
 
-Partial updates are not allowed.
+Partial financial updates are never allowed.
 
 ---
 
 # Future Evolution
 
-The financial core is designed to support:
+The financial architecture supports:
 
-- Double-entry accounting
-- Banking integrations
+- Merchant Accounts
+- Virtual Cards
+- Physical Cards
+- Banking Integrations
 - Open Finance
-- International transfers
-- Payment providers
-- Merchant accounts
+- International Transfers
+- SWIFT
+- PIX
+- ACH
+- SEPA
+- Interac
 
-without major architectural changes.
+without fundamental architectural changes.
+
+---
+
+# Consequences
+
+## Positive
+
+- Strong financial integrity
+- Complete auditability
+- Excellent scalability
+- Predictable balance calculation
+- Easier regulatory compliance
+- Future-ready architecture
+
+## Negative
+
+- More complex implementation
+- More database writes
+- Ledger growth over time
+- Requires careful transaction management
 
 ---
 
 # Decision Summary
 
-Financial Model:
+| Item | Decision |
+|------|----------|
+| Financial Model | Immutable Ledger |
+| Balance Source | Ledger Entries |
+| Balance Storage | Cached only (optional) |
+| Transactions | ACID Required |
+| Ledger | Immutable |
+| Corrections | Compensating Entries |
+| Future Accounting | Double-entry Ready |
 
-Immutable Ledger
+---
 
-Balance Source:
+# References
 
-Ledger Entries
-
-Database Transactions:
-
-Required
-
-Financial Integrity:
-
-Guaranteed through ACID transactions and immutable records.
+- BLUEPRINT.md
+- ADR-001 Architecture Style
+- ADR-002 Database Architecture

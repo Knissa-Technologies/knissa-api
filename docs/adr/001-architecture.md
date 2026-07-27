@@ -2,173 +2,300 @@
 
 - **Status:** Accepted
 - **Date:** July 2026
+- **Decision Makers:** Knissa Engineering Team
 
 ---
 
 # Context
 
-Knissa is a digital financial platform designed to support multiple financial products, including digital accounts, wallets, international transfers, money exchange, payment services and banking integrations.
+Knissa is a financial infrastructure platform designed to support multiple financial products, including digital accounts, multi-currency wallets, international transfers, currency exchange, payment services, merchant accounts and future banking integrations.
 
-The platform is expected to evolve continuously while maintaining high code quality, security and scalability.
+The platform is expected to evolve continuously while maintaining high standards of security, scalability and maintainability.
 
-At the beginning of the project, the development team is small and prioritizes rapid delivery without sacrificing maintainability.
+During the initial stages, the engineering team is intentionally small. The chosen architecture must maximize development speed while preserving code quality and enabling future growth.
 
-Therefore, the architecture must:
+The architecture must:
 
 - be easy to understand;
 - support modular development;
-- allow independent evolution of business domains;
-- simplify testing;
+- isolate business domains;
+- simplify automated testing;
 - reduce operational complexity;
-- allow future migration to microservices if necessary.
+- minimize infrastructure costs;
+- support future evolution into distributed services if necessary.
 
 ---
 
 # Decision
 
-Knissa will adopt a **Modular Monolith Architecture**.
+Knissa adopts a **Modular Monolith Architecture**.
 
-The application will be organized into independent business modules, each containing its own controllers, services, repositories and domain logic.
+The application is organized into independent business modules, each responsible for its own domain logic, services, repositories and API endpoints.
 
-Examples of modules include:
+Example modules:
 
 ```text
-Auth
+Authentication
 
 Users
 
+Countries
+
+Currencies
+
 Wallets
 
-Transactions
-
 Ledger
+
+Transactions
 
 Exchange
 
 Payments
 
-OpenFinance
+Merchant
 
 Notifications
 
-Admin
+Compliance
+
+Administration
 ```
 
-Business rules must remain inside their respective modules.
+Each module owns its business rules and exposes only well-defined interfaces.
 
-Communication between modules should occur through services and clearly defined interfaces.
+Direct coupling between unrelated modules should be avoided.
+
+---
+
+# Alternatives Considered
+
+## Traditional Monolith
+
+Pros
+
+- Very simple
+- Fast initial development
+
+Cons
+
+- Difficult to maintain
+- Weak domain separation
+- Higher coupling
+- Poor scalability
+
+Decision
+
+Rejected.
+
+---
+
+## Microservices
+
+Pros
+
+- Independent deployments
+- Independent scalability
+- Strong service isolation
+
+Cons
+
+- High operational complexity
+- Service discovery
+- Distributed transactions
+- Higher infrastructure cost
+- Increased development overhead
+
+Decision
+
+Deferred until business growth justifies it.
+
+---
+
+## Modular Monolith
+
+Pros
+
+- Clear domain boundaries
+- Lower infrastructure costs
+- Easier deployments
+- Excellent maintainability
+- Easier onboarding
+- Excellent developer productivity
+
+Decision
+
+Accepted.
 
 ---
 
 # Benefits
 
-The Modular Monolith architecture provides:
+The chosen architecture provides:
 
-- Simple deployment
-- Lower infrastructure costs
+- Simple deployments
+- Strong modularity
+- High maintainability
 - Faster development
+- Lower infrastructure costs
+- Better automated testing
 - Easier debugging
-- Better code organization
-- Strong domain separation
-- Easier automated testing
-- Lower operational complexity
+- Clear business ownership
+- Reduced operational complexity
+
+---
+
+# Module Communication
+
+Modules communicate through Services only.
+
+Allowed:
+
+```text
+Controller
+
+↓
+
+Service
+
+↓
+
+Repository
+```
+
+Cross-module communication:
+
+```text
+Wallet Service
+
+↓
+
+Ledger Service
+```
+
+Avoid:
+
+```text
+Controller
+
+↓
+
+Repository of another module
+```
+
+Repositories must never be accessed directly by another module.
+
+---
+
+# Layer Responsibilities
+
+## Controllers
+
+Responsible for:
+
+- Receiving HTTP requests
+- Input validation
+- Calling services
+- Returning HTTP responses
+
+Controllers never contain business rules.
+
+---
+
+## Services
+
+Responsible for:
+
+- Business logic
+- Domain validation
+- Transactions
+- Cross-module orchestration
+
+---
+
+## Repositories
+
+Responsible only for persistence.
+
+Repositories never contain business rules.
+
+---
+
+## Domain
+
+Contains domain models and financial concepts.
 
 ---
 
 # Future Evolution
 
-If business growth requires independent scaling of specific modules, the architecture will support gradual extraction into microservices.
+If business growth requires independent scaling, modules may gradually evolve into microservices.
 
-Possible candidates include:
+Likely candidates:
 
 - Payments
 - Exchange
+- Merchant
 - Notifications
-- Open Finance
 
-This migration should occur only when justified by business or operational requirements.
+Migration will occur only when justified by measurable business or operational needs.
 
 ---
 
 # Consequences
 
-Positive:
+## Positive
 
-- Faster initial development
+- Faster delivery
 - Better maintainability
-- Easier onboarding of new developers
+- Easier onboarding
 - Lower infrastructure cost
+- Better code organization
+- Easier testing
 - Simpler deployments
 
-Negative:
+## Negative
 
 - Single deployment artifact
-- Shared database in early stages
-- Requires discipline to prevent tight coupling between modules
+- Shared database
+- Requires architectural discipline
+- Risk of module coupling if boundaries are ignored
 
 ---
 
-# Implementation Guidelines
+# Architectural Rules
 
-Every module should follow the same internal structure.
+The following rules are mandatory:
 
-Example:
-
-```text
-modules/
-
-users/
-
-controller/
-
-service/
-
-repository/
-
-domain/
-
-dto/
-
-routes/
-
-validators/
-```
-
-Business logic must never be placed inside controllers.
-
-Controllers are responsible only for:
-
-- receiving HTTP requests;
-- validating input;
-- invoking services;
-- returning HTTP responses.
-
-All business rules belong to the Service layer.
-
-Database access belongs exclusively to the Repository layer.
+- Business logic belongs to Services.
+- Controllers remain thin.
+- Repositories perform persistence only.
+- Every module owns its domain.
+- Cross-module communication occurs only through Services.
+- Financial operations must always pass through the Ledger.
+- Public APIs must be documented using OpenAPI.
+- Every feature requires automated tests.
 
 ---
 
 # Decision Summary
 
-Architecture Style:
+| Item | Decision |
+|------|----------|
+| Architecture | Modular Monolith |
+| Language | TypeScript |
+| Framework | Express |
+| Database | PostgreSQL |
+| ORM | Prisma |
+| Validation | Zod |
+| Cache | Redis |
+| Authentication | JWT |
+| Documentation | OpenAPI First |
 
-**Modular Monolith**
+---
 
-Language:
+# References
 
-**TypeScript**
-
-Framework:
-
-**Express**
-
-Database:
-
-**PostgreSQL**
-
-ORM:
-
-**Prisma**
-
-This decision establishes the architectural foundation for the Knissa platform.
+- BLUEPRINT.md
+- ADR-002 Database Decisions
+- ADR-003 Financial Core

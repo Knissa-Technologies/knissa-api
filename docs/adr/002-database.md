@@ -2,31 +2,93 @@
 
 - **Status:** Accepted
 - **Date:** July 2026
+- **Decision Makers:** Knissa Engineering Team
 
 ---
 
 # Context
 
-Knissa is a financial platform responsible for storing users, wallets, transactions, exchange rates, payments and ledger records.
+Knissa is a financial infrastructure platform responsible for storing users, wallets, transactions, exchange rates, payments, merchant accounts and immutable ledger records.
 
-The database must guarantee:
+The database is the foundation of the platform and must guarantee strong consistency, durability and financial integrity.
 
-- Data consistency
+Financial applications cannot tolerate inconsistent or partially committed data.
+
+The database architecture must provide:
+
 - ACID transactions
-- High reliability
 - Referential integrity
-- Scalability
-- Excellent performance
-
-Financial operations cannot tolerate inconsistent data.
+- High reliability
+- Predictable performance
+- Auditability
+- Long-term scalability
 
 ---
 
 # Decision
 
-The platform will use PostgreSQL as the primary relational database.
+Knissa adopts **PostgreSQL** as its primary relational database.
 
-Database access will be implemented using Prisma ORM.
+Database access is implemented exclusively through **Prisma ORM**.
+
+---
+
+# Alternatives Considered
+
+## MySQL
+
+Pros
+
+- Mature ecosystem
+- Good performance
+- Large community
+
+Cons
+
+- Less advanced SQL capabilities
+- Fewer native analytical features
+
+Decision
+
+Rejected.
+
+---
+
+## MongoDB
+
+Pros
+
+- Flexible schema
+- Easy horizontal scaling
+
+Cons
+
+- Weak fit for financial transactions
+- Complex transactional consistency
+- Less suitable for relational financial data
+
+Decision
+
+Rejected.
+
+---
+
+## PostgreSQL
+
+Pros
+
+- Full ACID compliance
+- Strong consistency
+- Excellent indexing
+- Rich SQL features
+- JSON support
+- Native UUID
+- Advanced transactions
+- Proven reliability
+
+Decision
+
+Accepted.
 
 ---
 
@@ -36,126 +98,254 @@ PostgreSQL provides:
 
 - ACID compliance
 - Strong consistency
-- Excellent indexing
-- Rich SQL features
+- Foreign Keys
+- Rich indexing
+- Materialized Views
 - JSON support
-- Foreign keys
-- Transactions
-- High reliability
-- Wide community adoption
+- Window Functions
+- Row-level locking
+- Mature ecosystem
 
-These characteristics make PostgreSQL suitable for financial applications.
+These characteristics make PostgreSQL ideal for financial applications.
 
 ---
 
 # Why Prisma?
 
-Prisma was selected because it offers:
+Prisma provides:
 
-- Type-safe database access
+- Type-safe queries
 - Excellent TypeScript integration
+- Migration system
 - Automatic client generation
-- Simple migrations
-- Good developer experience
 - Reduced boilerplate
+- High developer productivity
 
 ---
 
 # Primary Keys
 
-Every entity will use UUID as its primary identifier.
+Every entity uses UUID as its primary identifier.
 
-Example:
+Examples:
 
 - User
 - Wallet
 - Transaction
+- LedgerEntry
 - Exchange
 - Payment
+- Merchant
 
-UUIDs improve security and simplify distributed systems.
+Reasons:
+
+- Better security
+- No sequential identifiers
+- Easier distributed systems
+- Simpler future microservices
 
 ---
 
 # Database Principles
 
-The database must follow these principles:
+Every database decision must follow:
 
 - Referential Integrity
 - Data Normalization
-- Immutable Financial Records
 - Explicit Relationships
 - Foreign Keys
+- Immutable Financial Records
 - Auditability
+- Predictable Migrations
 
 ---
 
 # Financial Records
 
-Financial operations must never update balances directly.
+Financial data is immutable.
 
-Balances will always be calculated from Ledger Entries.
+The following entities must never be updated in ways that change financial history:
 
-Ledger records are immutable.
+- LedgerEntry
+- Transaction
+- Exchange
+- Payment
 
-If a correction is necessary, a compensating transaction must be created.
+Corrections must always generate compensating records.
+
+Balances are calculated exclusively from Ledger entries.
+
+The Ledger is the single source of truth.
 
 ---
 
 # Multi-Currency Support
 
-Currencies will be stored in database tables.
+Currencies are stored in database tables.
 
-New currencies must be added without code changes.
+Every Wallet belongs to exactly one Currency.
 
-Wallets will always reference a Currency.
+Exchange Rates are versioned.
+
+New currencies must be introduced without changing application code.
 
 ---
 
-# Soft Delete
+# Soft Delete Strategy
 
-Business entities such as Users may support soft delete.
+Business entities may support soft delete.
 
-Financial entities such as:
+Examples:
+
+- Users
+- Merchant
+- Notifications
+
+Financial entities must never be deleted.
+
+Examples:
 
 - LedgerEntry
 - Transaction
 - Exchange
+- Payment
+- AuditLog
 
-must never be deleted.
+---
+
+# Naming Conventions
+
+Tables:
+
+- snake_case
+- plural names
+
+Examples:
+
+```text
+users
+wallets
+transactions
+ledger_entries
+exchange_rates
+```
+
+Columns:
+
+```text
+created_at
+updated_at
+deleted_at
+wallet_id
+currency_id
+```
+
+---
+
+# Indexing Strategy
+
+Indexes should exist for:
+
+- Foreign Keys
+- Frequently queried columns
+- Unique identifiers
+- Search fields
+
+Examples:
+
+```text
+email
+
+wallet_id
+
+currency_id
+
+transaction_id
+
+created_at
+```
+
+---
+
+# Transactions
+
+Financial operations must always execute inside database transactions.
+
+Examples:
+
+- Transfer
+- Deposit
+- Withdrawal
+- Exchange
+- Payment
+
+No financial operation may leave the database in a partially committed state.
+
+---
+
+# Audit Strategy
+
+Every financial operation must be traceable.
+
+The database must preserve:
+
+- Creation date
+- Update date
+- Responsible user
+- Related transaction
+- Audit references
 
 ---
 
 # Future Evolution
 
-Future improvements may include:
+Possible future improvements include:
 
 - Read Replicas
-- Database Partitioning
-- Horizontal Scaling
+- Partitioning
+- Connection Pooling
 - Event Streaming
 - Backup Replication
+- Multi-region deployment
+
+---
+
+# Consequences
+
+## Positive
+
+- Strong consistency
+- High reliability
+- Excellent maintainability
+- Easier scaling
+- Mature tooling
+- Excellent TypeScript support
+
+## Negative
+
+- Relational modeling requires discipline
+- UUID indexes are larger than integer indexes
+- Schema migrations require planning
 
 ---
 
 # Decision Summary
 
-Database:
+| Item | Decision |
+|------|----------|
+| Database | PostgreSQL |
+| ORM | Prisma |
+| Primary Keys | UUID |
+| Transactions | ACID |
+| Financial Model | Immutable Ledger |
+| Currency Model | Database Tables |
+| Naming | snake_case |
+| Soft Delete | Business entities only |
 
-**PostgreSQL**
+---
 
-ORM:
+# References
 
-**Prisma**
-
-Primary Keys:
-
-**UUID**
-
-Financial Model:
-
-**Immutable Ledger**
-
-Currency Model:
-
-**Database Tables**
+- BLUEPRINT.md
+- ADR-001 Architecture Style
+- ADR-003 Financial Core

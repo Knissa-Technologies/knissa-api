@@ -1,9 +1,25 @@
-openapi: 3.0.3
+openapi: 3.1.1
 
 info:
   title: Knissa API
   version: 1.0.0
-  description: Backend API for the Knissa Financial Platform.
+
+  description: |
+    REST API for the Knissa Financial Platform.
+
+    Knissa provides secure financial services including:
+
+    - Authentication
+    - Wallet Management
+    - Payments
+    - Currency Exchange
+    - Multi-Currency Wallets
+    - Merchant Accounts
+    - Future Open Finance Integrations
+
+  contact:
+    name: Knissa Engineering
+    email: engineering@knissa.com
 
   license:
     name: MIT
@@ -11,7 +27,16 @@ info:
 
 servers:
   - url: http://localhost:3000
-    description: Local Development Server
+    description: Development
+
+  - url: https://staging-api.knissa.com
+    description: Staging
+
+  - url: https://api.knissa.com
+    description: Production
+
+security:
+  - BearerAuth: []
 
 tags:
   - name: Authentication
@@ -33,10 +58,19 @@ tags:
     description: Exchange rate management
 
   - name: Countries
-    description: Countries
+    description: Supported countries
 
   - name: Currencies
-    description: Currencies
+    description: Supported currencies
+
+  - name: Ledger
+    description: Immutable financial ledger
+
+  - name: Merchants
+    description: Merchant accounts
+
+  - name: Audit
+    description: Audit and compliance
 
 paths:
   /auth/register:
@@ -45,9 +79,10 @@ paths:
         - Authentication
 
       summary: Register a new user
-      operationId: registerUser
 
-      description: Creates a new user account.
+      description: Creates a new Knissa account.
+
+      operationId: registerUser
 
       security: []
 
@@ -61,7 +96,7 @@ paths:
 
       responses:
         "201":
-          description: User registered successfully.
+          description: User successfully registered.
 
           content:
             application/json:
@@ -69,10 +104,20 @@ paths:
                 $ref: "#/components/schemas/RegisterResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "409":
-          description: Email already registered
+          description: Email already registered.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /auth/login:
     post:
@@ -80,9 +125,12 @@ paths:
         - Authentication
 
       summary: Authenticate user
-      operationId: loginUser
 
-      description: Authenticate a user and return a JWT token.
+      description: |
+        Authenticates a user and returns
+        an access token.
+
+      operationId: loginUser
 
       security: []
 
@@ -104,10 +152,20 @@ paths:
                 $ref: "#/components/schemas/LoginResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "401":
-          description: Invalid credentials
+          description: Invalid credentials.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /users:
     post:
@@ -115,10 +173,10 @@ paths:
         - Users
 
       summary: Create a new user
-      operationId: createUser
 
-      security:
-        - BearerAuth: []
+      description: Creates a new platform user.
+
+      operationId: createUser
 
       requestBody:
         required: true
@@ -130,7 +188,7 @@ paths:
 
       responses:
         "201":
-          description: User created successfully.
+          description: User successfully created.
 
           content:
             application/json:
@@ -138,24 +196,34 @@ paths:
                 $ref: "#/components/schemas/UserResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "409":
-          description: Email already exists
+          description: Email already exists.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     get:
       tags:
         - Users
 
-      summary: List all users
-      operationId: listUsers
+      summary: List users
 
-      security:
-        - BearerAuth: []
+      description: Returns all registered users.
+
+      operationId: listUsers
 
       responses:
         "200":
-          description: List of users.
+          description: Users retrieved successfully.
 
           content:
             application/json:
@@ -163,10 +231,12 @@ paths:
                 $ref: "#/components/schemas/UserListResponse"
 
         "401":
-          description: Unauthorized
+          description: Unauthorized.
 
-        "403":
-          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /users/me:
     get:
@@ -174,14 +244,14 @@ paths:
         - Users
 
       summary: Get authenticated user
-      operationId: currentUser
 
-      security:
-        - BearerAuth: []
+      description: Returns the authenticated user's profile.
+
+      operationId: currentUser
 
       responses:
         "200":
-          description: Authenticated user.
+          description: User profile.
 
           content:
             application/json:
@@ -189,18 +259,23 @@ paths:
                 $ref: "#/components/schemas/UserResponse"
 
         "401":
-          description: Unauthorized
+          description: Unauthorized.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /wallets/open-account:
     post:
       tags:
         - Wallets
 
-      summary: Open a wallet account
-      operationId: openWalletAccount
+      summary: Open wallet
 
-      security:
-        - BearerAuth: []
+      description: Creates a wallet for a specific currency.
+
+      operationId: openWalletAccount
 
       requestBody:
         required: true
@@ -212,7 +287,7 @@ paths:
 
       responses:
         "201":
-          description: Wallet created successfully.
+          description: Wallet successfully created.
 
           content:
             application/json:
@@ -220,13 +295,20 @@ paths:
                 $ref: "#/components/schemas/WalletResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "409":
-          description: Wallet already exists for this currency
+          description: Wallet already exists.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /wallets/deposit:
     post:
@@ -234,10 +316,10 @@ paths:
         - Wallets
 
       summary: Deposit funds
-      operationId: depositFunds
 
-      security:
-        - BearerAuth: []
+      description: Deposits money into a wallet.
+
+      operationId: depositFunds
 
       requestBody:
         required: true
@@ -257,10 +339,20 @@ paths:
                 $ref: "#/components/schemas/WalletResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "422":
+          description: Business rule violation.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /wallets/withdraw:
     post:
@@ -268,10 +360,10 @@ paths:
         - Wallets
 
       summary: Withdraw funds
-      operationId: withdrawFunds
 
-      security:
-        - BearerAuth: []
+      description: Withdraws money from a wallet.
+
+      operationId: withdrawFunds
 
       requestBody:
         required: true
@@ -291,13 +383,20 @@ paths:
                 $ref: "#/components/schemas/WalletResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "422":
-          description: Insufficient balance
+          description: Insufficient balance.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /wallets/transfer:
     post:
@@ -305,10 +404,18 @@ paths:
         - Wallets
 
       summary: Transfer funds
+
+      description: Transfers money between wallets.
+
       operationId: transferFunds
 
-      security:
-        - BearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+
+          schema:
+            type: string
 
       requestBody:
         required: true
@@ -320,7 +427,7 @@ paths:
 
       responses:
         "200":
-          description: Transfer completed.
+          description: Transfer completed successfully.
 
           content:
             application/json:
@@ -328,24 +435,31 @@ paths:
                 $ref: "#/components/schemas/TransferResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "422":
-          description: Insufficient balance
+          description: Insufficient balance.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /wallets/{accountNumber}/statement:
     get:
       tags:
         - Wallets
 
-      summary: Get wallet statement
-      operationId: walletStatement
+      summary: Wallet statement
 
-      security:
-        - BearerAuth: []
+      description: Returns the transaction history for a wallet.
+
+      operationId: walletStatement
 
       parameters:
         - name: accountNumber
@@ -357,29 +471,39 @@ paths:
 
       responses:
         "200":
-          description: Wallet statement.
+          description: Statement successfully retrieved.
 
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/StatementResponse"
 
-        "401":
-          description: Unauthorized
-
         "404":
-          description: Wallet not found
+          description: Wallet not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /payments:
     post:
       tags:
         - Payments
 
-      summary: Make a payment
+      summary: Create payment
+
+      description: Creates and processes a payment transaction.
+
       operationId: createPayment
 
-      security:
-        - BearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+
+          schema:
+            type: string
 
       requestBody:
         required: true
@@ -399,13 +523,20 @@ paths:
                 $ref: "#/components/schemas/PaymentResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "422":
-          description: Insufficient balance
+          description: Business rule violation.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /payments/{id}:
     get:
@@ -413,10 +544,10 @@ paths:
         - Payments
 
       summary: Get payment details
-      operationId: getPaymentById
 
-      security:
-        - BearerAuth: []
+      description: Returns a payment by its identifier.
+
+      operationId: getPaymentById
 
       parameters:
         - name: id
@@ -429,29 +560,31 @@ paths:
 
       responses:
         "200":
-          description: Payment details.
+          description: Payment found.
 
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentResponse"
 
-        "401":
-          description: Unauthorized
-
         "404":
-          description: Payment not found
+          description: Payment not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /payments/history:
     get:
       tags:
         - Payments
 
-      summary: List payment history
-      operationId: paymentHistory
+      summary: Payment history
 
-      security:
-        - BearerAuth: []
+      description: Returns all payments of the authenticated user.
+
+      operationId: paymentHistory
 
       responses:
         "200":
@@ -462,19 +595,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/PaymentListResponse"
 
-        "401":
-          description: Unauthorized
-
   /exchange:
     post:
       tags:
         - Exchange
 
-      summary: Exchange currency
+      summary: Exchange currencies
+
+      description: Converts money from one wallet currency to another.
+
       operationId: exchangeCurrency
 
-      security:
-        - BearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+
+          schema:
+            type: string
 
       requestBody:
         required: true
@@ -494,13 +632,20 @@ paths:
                 $ref: "#/components/schemas/ExchangeResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
         "422":
-          description: Insufficient balance
+          description: Insufficient balance.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /exchange/history:
     get:
@@ -508,22 +653,19 @@ paths:
         - Exchange
 
       summary: Exchange history
-      operationId: exchangeHistory
 
-      security:
-        - BearerAuth: []
+      description: Returns all exchange operations.
+
+      operationId: exchangeHistory
 
       responses:
         "200":
-          description: List of exchanges.
+          description: Exchange history.
 
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExchangeListResponse"
-
-        "401":
-          description: Unauthorized
 
   /exchange-rates:
     post:
@@ -531,10 +673,10 @@ paths:
         - Exchange Rates
 
       summary: Create exchange rate
-      operationId: createExchangeRate
 
-      security:
-        - BearerAuth: []
+      description: Creates a new exchange rate.
+
+      operationId: createExchangeRate
 
       requestBody:
         required: true
@@ -554,32 +696,31 @@ paths:
                 $ref: "#/components/schemas/ExchangeRateResponse"
 
         "400":
-          description: Validation error
+          description: Validation error.
 
-        "401":
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
     get:
       tags:
         - Exchange Rates
 
       summary: List exchange rates
-      operationId: listExchangeRates
 
-      security:
-        - BearerAuth: []
+      description: Returns all configured exchange rates.
+
+      operationId: listExchangeRates
 
       responses:
         "200":
-          description: List of exchange rates.
+          description: Exchange rates list.
 
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExchangeRateListResponse"
-
-        "401":
-          description: Unauthorized
 
   /countries:
     get:
@@ -587,14 +728,14 @@ paths:
         - Countries
 
       summary: List countries
-      operationId: listCountries
 
-      security:
-        - BearerAuth: []
+      description: Returns all countries supported by the platform.
+
+      operationId: listCountries
 
       responses:
         "200":
-          description: List of countries.
+          description: Countries retrieved successfully.
 
           content:
             application/json:
@@ -602,7 +743,12 @@ paths:
                 $ref: "#/components/schemas/CountryListResponse"
 
         "401":
-          description: Unauthorized
+          description: Unauthorized.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /currencies:
     get:
@@ -610,14 +756,14 @@ paths:
         - Currencies
 
       summary: List currencies
-      operationId: listCurrencies
 
-      security:
-        - BearerAuth: []
+      description: Returns all supported currencies.
+
+      operationId: listCurrencies
 
       responses:
         "200":
-          description: List of currencies.
+          description: Currencies retrieved successfully.
 
           content:
             application/json:
@@ -625,7 +771,12 @@ paths:
                 $ref: "#/components/schemas/CurrencyListResponse"
 
         "401":
-          description: Unauthorized
+          description: Unauthorized.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   securitySchemes:
@@ -635,6 +786,66 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ErrorResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: false
+
+        error:
+          type: object
+
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+
+            message:
+              type: string
+              example: Validation failed.
+
+            details:
+              type: array
+
+              items:
+                type: string
+
+    Pagination:
+      type: object
+
+      properties:
+        page:
+          type: integer
+          example: 1
+
+        limit:
+          type: integer
+          example: 20
+
+        total:
+          type: integer
+          example: 150
+
+        pages:
+          type: integer
+          example: 8
+
+    ApiResponse:
+      type: object
+
+      properties:
+        success:
+          type: boolean
+          example: true
+
+        message:
+          type: string
+          example: Operation completed successfully.
+
+    RegisterRequest:
+
     RegisterRequest:
       type: object
 
@@ -646,6 +857,8 @@ components:
       properties:
         name:
           type: string
+          minLength: 3
+          maxLength: 120
           example: Jean Joseph
 
         email:
@@ -656,22 +869,16 @@ components:
         password:
           type: string
           format: password
+          minLength: 8
           example: "12345678"
 
     RegisterResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        message:
-          type: string
-          example: User registered successfully.
-
-        data:
-          $ref: "#/components/schemas/User"
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/User"
 
     LoginRequest:
       type: object
@@ -684,31 +891,30 @@ components:
         email:
           type: string
           format: email
-          example: jean@email.com
 
         password:
           type: string
           format: password
-          example: "12345678"
 
     LoginResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
 
           properties:
-            user:
-              $ref: "#/components/schemas/User"
+            data:
+              type: object
 
-            accessToken:
-              type: string
-              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+
+                accessToken:
+                  type: string
+
+                expiresIn:
+                  type: integer
+                  example: 3600
 
     User:
       type: object
@@ -717,20 +923,20 @@ components:
         id:
           type: string
           format: uuid
-          example: 6f3d8b2a-1b3e-4f98-a741-94c28f4b95aa
 
         name:
           type: string
-          example: Jean Joseph
 
         email:
           type: string
           format: email
-          example: jean@email.com
 
         role:
           type: string
-          example: USER
+          enum:
+            - USER
+            - ADMIN
+            - MERCHANT
 
         createdAt:
           type: string
@@ -741,52 +947,70 @@ components:
           format: date-time
 
     CreateUserRequest:
-      type: object
-
-      required:
-        - name
-        - email
-        - password
-
-      properties:
-        name:
-          type: string
-          example: Jean Joseph
-
-        email:
-          type: string
-          format: email
-          example: jean@email.com
-
-        password:
-          type: string
-          format: password
-          example: "12345678"
+      $ref: "#/components/schemas/RegisterRequest"
 
     UserResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
 
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          $ref: "#/components/schemas/User"
+          properties:
+            data:
+              $ref: "#/components/schemas/User"
 
     UserListResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+        - type: object
+
+          properties:
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
+            data:
+              type: array
+
+              items:
+                $ref: "#/components/schemas/User"
+
+    Wallet:
       type: object
 
       properties:
-        success:
-          type: boolean
-          example: true
+        id:
+          type: string
+          format: uuid
 
-        data:
-          type: array
+        accountNumber:
+          type: string
 
-          items:
-            $ref: "#/components/schemas/User"
+        balance:
+          type: number
+          format: double
+
+        currency:
+          type: string
+
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+            - CLOSED
+
+        createdAt:
+          type: string
+          format: date-time
+
+    WalletResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+
+        - type: object
+
+          properties:
+            data:
+              $ref: "#/components/schemas/Wallet"
 
     OpenWalletRequest:
       type: object
@@ -804,46 +1028,6 @@ components:
           type: string
           format: uuid
 
-    Wallet:
-      type: object
-
-      properties:
-        id:
-          type: string
-          format: uuid
-
-        accountNumber:
-          type: string
-          example: "100000001"
-
-        balance:
-          type: number
-          format: double
-          example: 1500.75
-
-        currency:
-          type: string
-          example: BRL
-
-        status:
-          type: string
-          example: ACTIVE
-
-        createdAt:
-          type: string
-          format: date-time
-
-    WalletResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          $ref: "#/components/schemas/Wallet"
-
     DepositRequest:
       type: object
 
@@ -858,7 +1042,6 @@ components:
         amount:
           type: number
           format: double
-          example: 500
 
     WithdrawRequest:
       type: object
@@ -874,7 +1057,6 @@ components:
         amount:
           type: number
           format: double
-          example: 250
 
     TransferRequest:
       type: object
@@ -894,82 +1076,59 @@ components:
         amount:
           type: number
           format: double
-          example: 100
 
     TransferResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
 
-      properties:
-        success:
-          type: boolean
-          example: true
+        - type: object
 
-        message:
-          type: string
-          example: Transfer completed successfully.
+          properties:
+            transactionId:
+              type: string
+              format: uuid
+
+            data:
+              $ref: "#/components/schemas/Wallet"
 
     StatementResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
 
-      properties:
-        success:
-          type: boolean
-          example: true
+        - type: object
 
-        data:
-          type: array
+          properties:
+            data:
+              type: array
 
-          items:
-            type: object
+              items:
+                type: object
 
-            properties:
-              id:
-                type: string
-                format: uuid
+                properties:
+                  id:
+                    type: string
+                    format: uuid
 
-              type:
-                type: string
-                example: DEPOSIT
+                  type:
+                    type: string
 
-              amount:
-                type: number
-                format: double
+                  amount:
+                    type: number
+                    format: double
 
-              createdAt:
-                type: string
-                format: date-time
-
-    PaymentRequest:
-      type: object
-
-      required:
-        - fromAccount
-        - toAccount
-        - amount
-
-      properties:
-        fromAccount:
-          type: string
-          example: "100000001"
-
-        toAccount:
-          type: string
-          example: "100000002"
-
-        amount:
-          type: number
-          format: double
-          example: 250.50
-
-        description:
-          type: string
-          example: Monthly payment
+                  createdAt:
+                    type: string
+                    format: date-time
 
     Payment:
       type: object
 
       properties:
         id:
+          type: string
+          format: uuid
+
+        transactionId:
           type: string
           format: uuid
 
@@ -985,38 +1144,18 @@ components:
 
         status:
           type: string
-          example: COMPLETED
+          enum:
+            - PENDING
+            - PROCESSING
+            - COMPLETED
+            - FAILED
+            - CANCELLED
 
         createdAt:
           type: string
           format: date-time
 
-    PaymentResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          $ref: "#/components/schemas/Payment"
-
-    PaymentListResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          type: array
-
-          items:
-            $ref: "#/components/schemas/Payment"
-
-    ExchangeRequest:
+    PaymentRequest:
       type: object
 
       required:
@@ -1027,18 +1166,97 @@ components:
       properties:
         fromAccount:
           type: string
-          example: "100000001"
 
         toAccount:
           type: string
-          example: "100000002"
 
         amount:
           type: number
           format: double
-          example: 100
+
+        description:
+          type: string
+
+    PaymentResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+
+        - type: object
+
+          properties:
+            data:
+              $ref: "#/components/schemas/Payment"
+
+    PaymentListResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+
+        - type: object
+
+          properties:
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
+            data:
+              type: array
+
+              items:
+                $ref: "#/components/schemas/Payment"
 
     Exchange:
+      type: object
+
+      properties:
+        id:
+          type: string
+          format: uuid
+
+        fromCurrency:
+          type: string
+
+        toCurrency:
+          type: string
+
+        amount:
+          type: number
+
+        convertedAmount:
+          type: number
+
+        exchangeRate:
+          type: number
+
+        createdAt:
+          type: string
+          format: date-time
+
+    ExchangeResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+
+        - type: object
+
+          properties:
+            data:
+              $ref: "#/components/schemas/Exchange"
+
+    ExchangeListResponse:
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
+
+        - type: object
+
+          properties:
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
+            data:
+              type: array
+
+              items:
+                $ref: "#/components/schemas/Exchange"
+
+    ExchangeRate:
       type: object
 
       properties:
@@ -1052,48 +1270,16 @@ components:
 
         toCurrency:
           type: string
-          example: HTG
+          example: USD
 
-        amount:
+        rate:
           type: number
           format: double
-
-        convertedAmount:
-          type: number
-          format: double
-
-        exchangeRate:
-          type: number
-          format: double
+          example: 5.42
 
         createdAt:
           type: string
           format: date-time
-
-    ExchangeResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          $ref: "#/components/schemas/Exchange"
-
-    ExchangeListResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: true
-
-        data:
-          type: array
-
-          items:
-            $ref: "#/components/schemas/Exchange"
 
     ExchangeRateRequest:
       type: object
@@ -1110,59 +1296,37 @@ components:
 
         toCurrency:
           type: string
-          example: HTG
+          example: USD
 
         rate:
           type: number
           format: double
-          example: 24.50
-
-    ExchangeRate:
-      type: object
-
-      properties:
-        id:
-          type: string
-          format: uuid
-
-        fromCurrency:
-          type: string
-
-        toCurrency:
-          type: string
-
-        rate:
-          type: number
-          format: double
-
-        createdAt:
-          type: string
-          format: date-time
 
     ExchangeRateResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
 
-      properties:
-        success:
-          type: boolean
-          example: true
+        - type: object
 
-        data:
-          $ref: "#/components/schemas/ExchangeRate"
+          properties:
+            data:
+              $ref: "#/components/schemas/ExchangeRate"
 
     ExchangeRateListResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
 
-      properties:
-        success:
-          type: boolean
-          example: true
+        - type: object
 
-        data:
-          type: array
+          properties:
+            pagination:
+              $ref: "#/components/schemas/Pagination"
 
-          items:
-            $ref: "#/components/schemas/ExchangeRate"
+            data:
+              type: array
+
+              items:
+                $ref: "#/components/schemas/ExchangeRate"
 
     Country:
       type: object
@@ -1185,18 +1349,20 @@ components:
           example: BRL
 
     CountryListResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
 
-      properties:
-        success:
-          type: boolean
-          example: true
+        - type: object
 
-        data:
-          type: array
+          properties:
+            pagination:
+              $ref: "#/components/schemas/Pagination"
 
-          items:
-            $ref: "#/components/schemas/Country"
+            data:
+              type: array
+
+              items:
+                $ref: "#/components/schemas/Country"
 
     Currency:
       type: object
@@ -1219,15 +1385,17 @@ components:
           example: R$
 
     CurrencyListResponse:
-      type: object
+      allOf:
+        - $ref: "#/components/schemas/ApiResponse"
 
-      properties:
-        success:
-          type: boolean
-          example: true
+        - type: object
 
-        data:
-          type: array
+          properties:
+            pagination:
+              $ref: "#/components/schemas/Pagination"
 
-          items:
-            $ref: "#/components/schemas/Currency"
+            data:
+              type: array
+
+              items:
+                $ref: "#/components/schemas/Currency"

@@ -1,6 +1,3 @@
-
-
-
 import { prisma } from "../../src/infra/database/prisma.js";
 
 export async function cleanDatabase() {
@@ -16,4 +13,12 @@ export async function cleanDatabase() {
   // NÃO apagar tabelas de referência
   // await prisma.currency.deleteMany();
   // await prisma.country.deleteMany();
+
+  await prisma.country.deleteMany({
+    where: {
+      isoCode: {
+        notIn: ["BR", "US", "CA", "HT", "FR"],
+      },
+    },
+  });
 }

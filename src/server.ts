@@ -2,6 +2,12 @@ import "dotenv/config";
 
 import app from "./app.js";
 
+
+import listEndpoints from "express-list-endpoints";
+
+
+console.table(listEndpoints(app));
+
 const PORT = Number(process.env.PORT) || 3000;
 
 const server = app.listen(PORT, () => {

@@ -1,15 +1,11 @@
-import jwt, {
-  JsonWebTokenError,
-  TokenExpiredError,
-  type SignOptions,
-} from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import type { SignOptions } from "jsonwebtoken";
+
 import { randomUUID } from "node:crypto";
 
 import { env } from "../../../config/env.js";
 
-import {
-  UnauthorizedError,
-} from "../../../shared/errors/index.js";
+import { UnauthorizedError } from "../../../shared/errors/index.js";
 
 import type {
   AccessTokenPayload,
@@ -20,10 +16,7 @@ import type {
 // ACCESS TOKEN
 // =====================================================
 
-export function generateAccessToken(
-  userId: string,
-  role: string,
-): string {
+export function generateAccessToken(userId: string, role: string): string {
   const payload: AccessTokenPayload = {
     sub: userId,
     role,
@@ -60,18 +53,13 @@ export function generateRefreshToken(userId: string) {
 // VERIFY REFRESH TOKEN
 // =====================================================
 
-export function verifyRefreshToken(
-  token: string,
-): RefreshTokenPayload {
+export function verifyRefreshToken(token: string): RefreshTokenPayload {
   try {
-    return jwt.verify(
-      token,
-      env.REFRESH_TOKEN_SECRET,
-    ) as RefreshTokenPayload;
+    return jwt.verify(token, env.REFRESH_TOKEN_SECRET) as RefreshTokenPayload;
   } catch (error) {
     if (
-      error instanceof JsonWebTokenError ||
-      error instanceof TokenExpiredError
+      error instanceof jwt.JsonWebTokenError ||
+      error instanceof jwt.TokenExpiredError
     ) {
       throw new UnauthorizedError("Invalid refresh token.");
     }
@@ -84,18 +72,13 @@ export function verifyRefreshToken(
 // VERIFY ACCESS TOKEN
 // =====================================================
 
-export function verifyAccessToken(
-  token: string,
-): AccessTokenPayload {
+export function verifyAccessToken(token: string): AccessTokenPayload {
   try {
-    return jwt.verify(
-      token,
-      env.JWT_SECRET,
-    ) as AccessTokenPayload;
+    return jwt.verify(token, env.JWT_SECRET) as AccessTokenPayload;
   } catch (error) {
     if (
-      error instanceof JsonWebTokenError ||
-      error instanceof TokenExpiredError
+      error instanceof jwt.JsonWebTokenError ||
+      error instanceof jwt.TokenExpiredError
     ) {
       throw new UnauthorizedError("Invalid access token.");
     }

@@ -103,6 +103,7 @@ model Transaction {
   @@index([status])
   @@index([type])
   @@index([reference])
+  @@index([createdAt])
   @@map("transactions")
 }
 
@@ -118,6 +119,7 @@ model LedgerEntry {
 
   @@index([walletId])
   @@index([transactionId])
+  @@index([createdAt])
   @@map("ledger_entries")
 }
 
@@ -133,6 +135,8 @@ model ExchangeRate {
   quoteCurrency   Currency @relation("QuoteCurrency", fields: [quoteCurrencyId], references: [id])
 
   @@unique([baseCurrencyId, quoteCurrencyId])
+  @@index([baseCurrencyId])
+  @@index([quoteCurrencyId])
   @@map("exchange_rates")
 }
 
@@ -159,6 +163,7 @@ model RefreshToken {
 
   @@index([userId])
   @@index([jti])
+  @@index([expiresAt])
 }
 
 enum UserRole {
