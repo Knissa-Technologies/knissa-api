@@ -45,8 +45,6 @@ describe("POST /wallets/deposit", () => {
         amount: 100,
       });
 
-    console.log(JSON.stringify(deposit.body, null, 2));
-
     expect(deposit.status).toBe(200);
 
     expect(deposit.body.success).toBe(true);

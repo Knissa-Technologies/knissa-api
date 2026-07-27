@@ -1,34 +1,17 @@
 import request from "supertest";
+import app from "../../src/app.js";
 
-import app from "../../src/app";
-import { prisma } from "../../src/infra/database/prisma";
+export async function createUser(email: string, countryId: string) {
+  const password = "12345678";
 
-export async function createUser() {
-  const country = await prisma.country.findFirst({
-    where: {
-      code: "BR",
-    },
-  });
-
-  if (!country) {
-    throw new Error("Country BR not found.");
-  }
-
-  const payload = {
+  const response = await request(app).post("/auth/register").send({
     firstName: "Jean",
     lastName: "Bauzil",
-    email: "jean@test.com",
-    password: "StrongPassword123!",
+    email,
+    password,
     phone: "+5511999999999",
-    countryId: country.id,
-  };
+    countryId,
+  });
 
-  const response = await request(app)
-    .post("/auth/register")
-    .send(payload);
-
-  return {
-    payload,
-    response,
-  };
+  return response.body;
 }

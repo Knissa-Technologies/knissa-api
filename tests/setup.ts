@@ -9,6 +9,8 @@ beforeEach(async () => {
 
   await prisma.transaction.deleteMany();
 
+  
+
   await prisma.refreshToken.deleteMany();
 
   await prisma.wallet.deleteMany();

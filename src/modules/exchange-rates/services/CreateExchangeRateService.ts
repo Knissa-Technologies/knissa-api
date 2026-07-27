@@ -1,6 +1,7 @@
 import { prisma } from "../../../infra/database/prisma.js";
 import { ExchangeRateRepository } from "../repositories/ExchangeRateRepository.js";
 import { CreateExchangeRateDTO } from "../dto/CreateExchangeRateDTO.js";
+import { AppError } from "../../../shared/errors/AppError.js";
 
 export class CreateExchangeRateService {
   private exchangeRateRepository: ExchangeRateRepository;
@@ -14,7 +15,10 @@ export class CreateExchangeRateService {
 
     // Não permite converter uma moeda para ela mesma
     if (baseCurrencyId === quoteCurrencyId) {
-      throw new Error("Base currency and quote currency cannot be the same.");
+      throw new AppError(
+        "Base currency and quote currency cannot be the same.",
+        400,
+      );
     }
 
     // Verifica se a moeda base existe
@@ -25,7 +29,7 @@ export class CreateExchangeRateService {
     });
 
     if (!baseCurrency) {
-      throw new Error("Base currency not found.");
+      throw new AppError("Base currency not found.", 404);
     }
 
     // Verifica se a moeda de destino existe
@@ -36,7 +40,7 @@ export class CreateExchangeRateService {
     });
 
     if (!quoteCurrency) {
-      throw new Error("Quote currency not found.");
+      throw new AppError("Quote currency not found.", 404);
     }
 
     // Verifica se a taxa já existe
@@ -46,7 +50,10 @@ export class CreateExchangeRateService {
     );
 
     if (existingRate) {
-      throw new Error("Exchange rate already exists for these currencies.");
+      throw new AppError(
+        "Exchange rate already exists for these currencies.",
+        409,
+      );
     }
 
     // Cria a taxa de câmbio

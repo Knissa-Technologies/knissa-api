@@ -21,7 +21,7 @@ export class AuthController {
 
       return res.status(200).json(result);
     } catch (error) {
-      next(error);
+      throw error;
     }
   }
 

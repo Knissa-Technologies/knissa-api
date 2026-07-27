@@ -7,6 +7,7 @@ import { GetExchangeRateByIdService } from "../services/GetExchangeRateByIdServi
 import { UpdateExchangeRateService } from "../services/UpdateExchangeRateService.js";
 import { updateExchangeRateSchema } from "../validators/updateExchangeRate.schema.js";
 import { DeleteExchangeRateService } from "../services/DeleteExchangeRateService.js";
+import { AppError } from "../../../shared/errors/AppError.js";
 
 export class ExchangeRateController {
   async findAll(req: Request, res: Response) {
@@ -20,7 +21,9 @@ export class ExchangeRateController {
         data: exchangeRates,
       });
     } catch (error: any) {
-      return res.status(500).json({
+      return res.status(
+        error instanceof AppError ? error.statusCode : 500,
+      ).json({
         success: false,
         message: error.message,
       });
@@ -47,7 +50,9 @@ export class ExchangeRateController {
         data: exchangeRate,
       });
     } catch (error: any) {
-      return res.status(404).json({
+      return res.status(
+        error instanceof AppError ? error.statusCode : 500,
+      ).json({
         success: false,
         message: error.message,
       });
@@ -68,7 +73,9 @@ export class ExchangeRateController {
         data: exchangeRate,
       });
     } catch (error: any) {
-      return res.status(400).json({
+      return res.status(
+        error instanceof AppError ? error.statusCode : 500,
+      ).json({
         success: false,
         message: error.message,
       });
@@ -91,7 +98,9 @@ export class ExchangeRateController {
         data: exchangeRate,
       });
     } catch (error: any) {
-      return res.status(400).json({
+      return res.status(
+        error instanceof AppError ? error.statusCode : 500,
+      ).json({
         success: false,
         message: error.message,
       });
@@ -111,7 +120,9 @@ export class ExchangeRateController {
         message: "Exchange rate deleted successfully.",
       });
     } catch (error: any) {
-      return res.status(404).json({
+      return res.status(
+        error instanceof AppError ? error.statusCode : 500,
+      ).json({
         success: false,
         message: error.message,
       });

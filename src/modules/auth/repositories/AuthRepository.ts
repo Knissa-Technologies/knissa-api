@@ -29,20 +29,19 @@ export class AuthRepository {
   }
 
   async findByEmail(email: string) {
-    console.log("Email recebido:", JSON.stringify(email));
+    return prisma.user.findUnique({
+      where: {
+        email: email.trim().toLowerCase(),
+      },
+    });
+  }
 
-    const users = await prisma.user.findMany();
-
-    console.log("Todos os usuários:");
-    console.dir(users, { depth: null });
-
-    const user = users.find(
-      (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase(),
-    );
-
-    console.log("Usuário encontrado pelo JavaScript:", user);
-
-    return user ?? null;
+  async findById(id: string) {
+    return prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
   }
 
   async createRefreshToken(data: {
@@ -52,7 +51,16 @@ export class AuthRepository {
     expiresAt: Date;
   }) {
     return prisma.refreshToken.create({
-      data,
+      data: {
+        jti: data.jti,
+        tokenHash: data.tokenHash,
+        expiresAt: data.expiresAt,
+        user: {
+          connect: {
+            id: data.userId,
+          },
+        },
+      },
     });
   }
 

@@ -98,10 +98,7 @@ export class AuthService {
       throw new UnauthorizedError("Refresh token expired.");
     }
 
-    const validToken = await argon2.verify(
-      storedToken.tokenHash,
-      refreshToken,
-    );
+    const validToken = await argon2.verify(storedToken.tokenHash, refreshToken);
 
     if (!validToken) {
       throw new UnauthorizedError("Invalid refresh token.");
@@ -109,10 +106,7 @@ export class AuthService {
 
     await this.repository.revokeRefreshToken(storedToken.id);
 
-    return this.createSession(
-      storedToken.user.id,
-      storedToken.user.role,
-    );
+    return this.createSession(storedToken.user.id, storedToken.user.role);
   }
 
   // =====================================================
@@ -146,10 +140,15 @@ export class AuthService {
   // =====================================================
 
   private async createSession(userId: string, role: string) {
+    
+
+    const existingUser = await this.repository.findById(userId);
+
+    
+
     const accessToken = generateAccessToken(userId, role);
 
-    const { token: refreshToken, jti } =
-      generateRefreshToken(userId);
+    const { token: refreshToken, jti } = generateRefreshToken(userId);
 
     const tokenHash = await argon2.hash(refreshToken);
 
