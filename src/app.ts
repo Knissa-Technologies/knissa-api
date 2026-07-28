@@ -16,6 +16,9 @@ import exchangeRateRoutes from "./modules/exchange-rates/routes.js";
 import transactionRoutes from "./modules/transactions/routes.js";
 import ledgerRoutes from "./modules/ledger/routes.js";
 import countryRoutes from "./modules/countries/routes.js";
+import currencyRoutes from "./modules/currencies/routes.js";
+
+
 
 import { HealthController } from "./shared/controllers/HealthController.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
@@ -92,6 +95,8 @@ app.use("/transactions", transactionRoutes);
 app.use("/ledger", ledgerRoutes);
 
 app.use("/countries", countryRoutes);
+
+app.use("/currencies", currencyRoutes);
 
 // ======================================================
 // Route Not Found
