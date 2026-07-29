@@ -140,20 +140,20 @@ export class AuthService {
   // =====================================================
 
   private async createSession(userId: string, role: string) {
-    
+    const user = await this.repository.findById(userId);
 
-    const existingUser = await this.repository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedError("User not found.");
+    }
 
-    
+    const accessToken = generateAccessToken(user.id, user.role);
 
-    const accessToken = generateAccessToken(userId, role);
-
-    const { token: refreshToken, jti } = generateRefreshToken(userId);
+    const { token: refreshToken, jti } = generateRefreshToken(user.id);
 
     const tokenHash = await argon2.hash(refreshToken);
 
     await this.repository.createRefreshToken({
-      userId,
+      userId: user.id,
       jti,
       tokenHash,
       expiresAt: getExpirationDate(refreshToken),
@@ -162,6 +162,13 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 }
