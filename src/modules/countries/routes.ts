@@ -12,6 +12,11 @@ const controller = new CountryController();
 
 router.use(authMiddleware);
 
+router.get("/", (req, res, next) => {
+  console.log(">>> GET /countries chegou na rota");
+  return controller.index(req, res, next);
+});
+
 // Todos os usuários autenticados
 router.get("/", controller.index.bind(controller));
 router.get("/:id", controller.show.bind(controller));

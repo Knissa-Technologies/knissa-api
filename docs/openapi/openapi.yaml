@@ -266,6 +266,106 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+
+      summary: Refresh access token
+
+      description: Generates a new access token using a valid refresh token.
+
+      operationId: refreshToken
+
+      security: []
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              type: object
+
+              required:
+                - refreshToken
+
+              properties:
+                refreshToken:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+      responses:
+        "200":
+          description: Token refreshed successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+
+        "401":
+          description: Invalid refresh token.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "422":
+          description: Validation failed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+
+      summary: Logout current session
+
+      description: Revokes the current refresh token.
+
+      operationId: logoutUser
+
+      responses:
+        "204":
+          description: Logged out successfully.
+
+        "401":
+          description: Unauthorized.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout-all:
+    post:
+      tags:
+        - Authentication
+
+      summary: Logout from all devices
+
+      description: Revokes every active refresh token for the authenticated user.
+
+      operationId: logoutAllDevices
+
+      responses:
+        "204":
+          description: All sessions revoked successfully.
+
+        "401":
+          description: Unauthorized.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /wallets/open-account:
     post:
       tags:
@@ -750,6 +850,175 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+    post:
+      tags:
+        - Countries
+
+      summary: Create country
+
+      description: Creates a new country.
+
+      operationId: createCountry
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountryRequest"
+
+      responses:
+        "201":
+          description: Country created successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Country"
+
+        "409":
+          description: Country already exists.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "422":
+          description: Validation failed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /countries/{id}:
+    get:
+      tags:
+        - Countries
+
+      summary: Get country by ID
+
+      description: Retrieves a country by its unique identifier.
+
+      operationId: getCountryById
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Country UUID
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Country retrieved successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Country"
+
+        "404":
+          description: Country not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - Countries
+
+      summary: Update country
+
+      description: Updates an existing country.
+
+      operationId: updateCountry
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CountryRequest"
+
+      responses:
+        "200":
+          description: Country updated successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Country"
+
+        "404":
+          description: Country not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "422":
+          description: Validation failed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - Countries
+
+      summary: Delete country
+
+      description: Deletes a country.
+
+      operationId: deleteCountry
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Country deleted successfully.
+
+        "404":
+          description: Country not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "409":
+          description: Country cannot be deleted because it is being used.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /currencies:
     get:
       tags:
@@ -757,7 +1026,7 @@ paths:
 
       summary: List currencies
 
-      description: Returns all supported currencies.
+      description: Returns all active currencies supported by the platform.
 
       operationId: listCurrencies
 
@@ -772,6 +1041,183 @@ paths:
 
         "401":
           description: Unauthorized.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - Currencies
+
+      summary: Create currency
+
+      description: Creates a new currency.
+
+      operationId: createCurrency
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyRequest"
+
+      responses:
+        "201":
+          description: Currency created successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+
+        "409":
+          description: Currency code already exists.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "422":
+          description: Validation failed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /currencies/{id}:
+    get:
+      tags:
+        - Currencies
+
+      summary: Get currency by ID
+
+      description: Retrieves a currency by its unique identifier.
+
+      operationId: getCurrencyById
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Currency UUID
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "200":
+          description: Currency retrieved successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+
+        "404":
+          description: Currency not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - Currencies
+
+      summary: Update currency
+
+      description: Updates an existing currency.
+
+      operationId: updateCurrency
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CurrencyRequest"
+
+      responses:
+        "200":
+          description: Currency updated successfully.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Currency"
+
+        "404":
+          description: Currency not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "409":
+          description: Currency code already exists.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "422":
+          description: Validation failed.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - Currencies
+
+      summary: Delete currency
+
+      description: Deletes a currency.
+
+      operationId: deleteCurrency
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        "204":
+          description: Currency deleted successfully.
+
+        "404":
+          description: Currency not found.
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "409":
+          description: Currency cannot be deleted because it is in use.
 
           content:
             application/json:
@@ -843,8 +1289,6 @@ components:
         message:
           type: string
           example: Operation completed successfully.
-
-    RegisterRequest:
 
     RegisterRequest:
       type: object
@@ -1344,7 +1788,7 @@ components:
           type: string
           example: BR
 
-        currency:
+        currencyCode:
           type: string
           example: BRL
 
@@ -1380,9 +1824,91 @@ components:
           type: string
           example: BRL
 
+        decimals:
+          type: integer
+          example: 2
+
+        isActive:
+          type: boolean
+          example: true
+
         symbol:
           type: string
           example: R$
+
+    CountryRequest:
+      type: object
+
+      required:
+        - name
+        - code
+
+      properties:
+        name:
+          type: string
+          example: Brazil
+
+        code:
+          type: string
+          example: BR
+
+        phoneCode:
+          type: string
+          example: "55"
+
+        currencyCode:
+          type: string
+          example: BRL
+
+    CurrencyRequest:
+      type: object
+
+      required:
+        - code
+        - name
+        - symbol
+
+      properties:
+        code:
+          type: string
+          maxLength: 10
+          example: BRL
+
+        name:
+          type: string
+          example: Brazilian Real
+
+        symbol:
+          type: string
+          example: R$
+
+        decimals:
+          type: integer
+          minimum: 0
+          maximum: 8
+          example: 2
+
+    ExchangeRequest:
+      type: object
+
+      required:
+        - fromCurrency
+        - toCurrency
+        - amount
+
+      properties:
+        fromCurrency:
+          type: string
+          example: USD
+
+        toCurrency:
+          type: string
+          example: BRL
+
+        amount:
+          type: number
+          format: double
+          example: 150.75
 
     CurrencyListResponse:
       allOf:
