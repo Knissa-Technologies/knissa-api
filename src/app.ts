@@ -17,6 +17,7 @@ import transactionRoutes from "./modules/transactions/routes.js";
 import ledgerRoutes from "./modules/ledger/routes.js";
 import countryRoutes from "./modules/countries/routes.js";
 import currencyRoutes from "./modules/currencies/routes.js";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 
 
 
@@ -97,6 +98,8 @@ app.use("/ledger", ledgerRoutes);
 app.use("/countries", countryRoutes);
 
 app.use("/currencies", currencyRoutes);
+
+app.use("/dashboard", dashboardRoutes);
 
 // ======================================================
 // Route Not Found
