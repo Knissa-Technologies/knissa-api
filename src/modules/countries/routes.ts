@@ -10,19 +10,28 @@ const router = Router();
 
 const controller = new CountryController();
 
-router.use(authMiddleware);
+// ======================================
+// Rotas públicas
+// ======================================
 
-router.get("/", (req, res, next) => {
-  console.log(">>> GET /countries chegou na rota");
-  return controller.index(req, res, next);
-});
-
-// Todos os usuários autenticados
 router.get("/", controller.index.bind(controller));
 router.get("/:id", controller.show.bind(controller));
 
-// Somente administradores
-router.post("/", authorize(UserRole.ADMIN), controller.create.bind(controller));
+// ======================================
+// A partir daqui exige autenticação
+// ======================================
+
+router.use(authMiddleware);
+
+// ======================================
+// Somente ADMIN
+// ======================================
+
+router.post(
+  "/",
+  authorize(UserRole.ADMIN),
+  controller.create.bind(controller),
+);
 
 router.put(
   "/:id",
