@@ -1,0 +1,241 @@
+enum VerificationLevel {
+    NONE
+    BASIC
+    STANDARD
+    ENHANCED
+}
+
+enum VerificationStatus {
+    PENDING
+    IN_REVIEW
+    APPROVED
+    REJECTED
+    EXPIRED
+}
+
+enum RiskLevel {
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+}
+
+model ComplianceProfile {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    reference String @unique
+
+    // ======================================================
+    // Owner
+    // ======================================================
+
+    accountId String @unique
+
+    // ======================================================
+    // Verification
+    // ======================================================
+
+    verificationLevel VerificationLevel @default(NONE)
+
+    verificationStatus VerificationStatus @default(PENDING)
+
+    riskLevel RiskLevel @default(LOW)
+
+    // ======================================================
+    // Dates
+    // ======================================================
+
+    verifiedAt DateTime?
+
+    expiresAt DateTime?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    account Account @relation(
+    fields: [accountId],
+    references id[]
+    )
+
+    documents ComplianceDocument[]
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([verificationStatus])
+    @@index([riskLevel])
+    @@map("compliance_profiles")
+}
+
+enum DocumentType {
+    NATIONAL_ID
+    PASSPORT
+    DRIVER_LICENSE
+    TAX_ID
+    BUSINESS_REGISTRATION
+    PROOF_OF_ADDRESS
+    SELFIE
+    OTHER
+}
+
+enum ComplianceDocumentStatus {
+    PENDING
+    UNDER_REVIEW
+    APPROVED
+    REJECTED
+    EXPIRED
+}
+
+model ComplianceDocument {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    reference String @unique
+
+    complianceProfileId String
+
+    // ======================================================
+    // Document
+    // ======================================================
+
+    type DocumentType
+
+    countryId String
+
+    documentIdentifier String
+
+    issuingAuthority String?
+
+    issuedAt DateTime?
+
+    expiresAt DateTime?
+
+    // ======================================================
+    // File
+    // ======================================================
+
+    frontImageUrl String?
+
+    backImageUrl String?
+
+    selfieImageUrl String?
+
+    // ======================================================
+    // Verification
+    // ======================================================
+
+    status ComplianceDocumentStatus @default(PENDING)
+
+    verifiedAt DateTime?
+
+    rejectionReason String?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    complianceProfile ComplianceProfile @relation(
+    fields: [complianceProfileId],
+    references: [id],
+    onDelete Cascade
+    )
+
+    country Country @relation(
+    fields: [countryId],
+    references id[]
+    )
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([complianceProfileId])
+    @@index([status])
+    @@index([type])
+    @@index([countryId])
+    @@map("compliance_documents")
+}
+
+enum ComplianceDecision {
+    APPROVED
+    REJECTED
+    MANUAL_REVIEW
+}
+
+model ComplianceReview {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    reference String @unique
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    complianceProfileId String
+
+    reviewedByAccountId String?
+
+    // ======================================================
+    // Decision
+    // ======================================================
+
+    decision ComplianceDecision
+
+    notes String?
+
+    riskScore Int?
+
+    // ======================================================
+    // Dates
+    // ======================================================
+
+    reviewedAt DateTime?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    complianceProfile ComplianceProfile @relation(
+    fields: [complianceProfileId],
+    references: [id],
+    onDelete Cascade
+    )
+
+    reviewedBy Account? @relation(
+    fields: [reviewedByAccountId],
+    references id[]
+    )
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([complianceProfileId])
+    @@index([decision])
+    @@map("compliance_reviews")
+}

@@ -1,0 +1,240 @@
+enum MerchantType {
+  INDIVIDUAL
+  COMPANY
+  NON_PROFIT
+  GOVERNMENT
+}
+
+enum MerchantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+  CLOSED
+}
+
+model Merchant {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Account
+  // ======================================================
+
+  accountId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  legalName String
+
+  tradeName String?
+
+  merchantType MerchantType
+
+  status MerchantStatus @default(PENDING)
+
+  website String?
+
+  supportEmail String?
+
+  supportPhone String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  members MerchantMember[]
+
+  settings MerchantSettings?
+
+  payments Payment[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId])
+
+  @@index([status])
+
+  @@index([merchantType])
+
+  @@map("merchants")
+}
+
+enum MerchantRole {
+  OWNER
+  ADMIN
+  MANAGER
+  FINANCE
+  OPERATOR
+  CASHIER
+  SUPPORT
+  VIEWER
+}
+
+model MerchantMember {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchantId String
+
+  accountId String
+
+  // ======================================================
+  // Membership
+  // ======================================================
+
+  role MerchantRole
+
+  isActive Boolean @default(true)
+
+  joinedAt DateTime @default(now())
+
+  invitedByAccountId String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchant Merchant @relation(
+    fields: [merchantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  invitedBy Account? @relation(
+    "MerchantInvitation",
+    fields: [invitedByAccountId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([merchantId, accountId])
+
+  @@index([merchantId])
+
+  @@index([accountId])
+
+  @@index([role])
+
+  @@map("merchant_members")
+}
+
+model MerchantSettings {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  merchantId String @unique
+
+  // ======================================================
+  // Business Settings
+  // ======================================================
+
+  displayName String?
+
+  logoUrl String?
+
+  websiteUrl String?
+
+  supportEmail String?
+
+  supportPhone String?
+
+  // ======================================================
+  // Localization
+  // ======================================================
+
+  languageCode String?
+
+  timezoneId String?
+
+  currencyCode String?
+
+  // ======================================================
+  // Payments
+  // ======================================================
+
+  allowWalletPayments Boolean @default(true)
+
+  allowQrCodePayments Boolean @default(true)
+
+  allowPaymentLinks Boolean @default(true)
+
+  autoSettlement Boolean @default(false)
+
+  // ======================================================
+  // Notifications
+  // ======================================================
+
+  emailNotifications Boolean @default(true)
+
+  smsNotifications Boolean @default(false)
+
+  pushNotifications Boolean @default(true)
+
+  whatsappNotifications Boolean @default(true)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchant Merchant @relation(
+    fields: [merchantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@map("merchant_settings")
+}

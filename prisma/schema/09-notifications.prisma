@@ -1,0 +1,272 @@
+enum NotificationChannel {
+    EMAIL
+    SMS
+    PUSH
+    IN_APP
+    WHATSAPP
+}
+
+enum NotificationStatus {
+    PENDING
+    PROCESSING
+    SENT
+    DELIVERED
+    READ
+    FAILED
+    CANCELLED
+}
+
+enum NotificationPriority {
+    LOW
+    NORMAL
+    HIGH
+    CRITICAL
+}
+
+enum NotificationType {
+    SECURITY
+    PAYMENT
+    TRANSFER
+    DEPOSIT
+    WITHDRAWAL
+    EXCHANGE
+    LOGIN
+    MFA
+    KYC
+    SYSTEM
+    MARKETING
+}
+
+model Notification {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    reference String @unique
+
+    // ======================================================
+    // Owner
+    // ======================================================
+
+    accountId String
+
+    // ======================================================
+    // Template / Provider
+    // ======================================================
+
+    templateId String?
+
+    providerId String?
+
+    providerReference String?
+
+    // ======================================================
+    // Notification
+    // ======================================================
+
+    type NotificationType
+
+    channel NotificationChannel
+
+    status NotificationStatus @default(PENDING)
+
+    priority NotificationPriority @default(NORMAL)
+
+    // ======================================================
+    // Content
+    // ======================================================
+
+    subject String?
+
+    title String
+
+    message String
+
+    // ======================================================
+    // Dates
+    // ======================================================
+
+    scheduledAt DateTime?
+
+    sentAt DateTime?
+
+    deliveredAt DateTime?
+
+    readAt DateTime?
+
+    failedAt DateTime?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    account Account @relation(
+    fields: [accountId],
+    references id[]
+    )
+
+    template NotificationTemplate? @relation(
+    fields: [templateId],
+    references id[]
+    )
+
+    provider NotificationProvider? @relation(
+    fields: [providerId],
+    references id[]
+    )
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([accountId])
+    @@index([templateId])
+    @@index([providerId])
+    @@index([status])
+    @@index([priority])
+    @@index([channel])
+    @@index([type])
+    @@map("notifications")
+}
+
+model NotificationTemplate {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    code String @unique
+
+    // ======================================================
+    // Template
+    // ======================================================
+
+    name String
+
+    type NotificationType
+
+    channel NotificationChannel
+
+    subject String?
+
+    title String
+
+    body String
+
+    isActive Boolean @default(true)
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    notifications Notification[]
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([type])
+    @@index([channel])
+    @@map("notification_templates")
+}
+
+model NotificationPreference {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    accountId String
+
+    type NotificationType
+
+    // ======================================================
+    // Channels
+    // ======================================================
+
+    emailEnabled Boolean @default(true)
+
+    smsEnabled Boolean @default(false)
+
+    pushEnabled Boolean @default(true)
+
+    inAppEnabled Boolean @default(true)
+
+    whatsappEnabled Boolean @default(true)
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    account Account @relation(
+    fields: [accountId],
+    references id[]
+    )
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@unique([accountId, type])
+    @@index([accountId])
+    @@map("notification_preferences")
+}
+
+enum NotificationProviderType {
+    EMAIL
+    SMS
+    PUSH
+    WHATSAPP
+}
+
+model NotificationProvider {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    reference String @unique
+
+    // ======================================================
+    // Provider
+    // ======================================================
+
+    name String
+
+    type NotificationProviderType
+
+    isDefault Boolean @default(false)
+
+    isActive Boolean @default(true)
+
+    configuration Json?
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([type])
+    @@index([isActive])
+    @@map("notification_providers")
+}
