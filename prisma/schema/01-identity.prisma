@@ -1,78 +1,274 @@
+// ======================================================
+// Identity Domain
+// ======================================================
+
 enum UserRole {
-  USER
-  SUPPORT
-  ADMIN
+    USER
+    SUPPORT
+    ADMIN
 }
 
 enum UserStatus {
-  PENDING
-  ACTIVE
-  BLOCKED
-  SUSPENDED
+    PENDING
+    ACTIVE
+    BLOCKED
+    SUSPENDED
 }
 
 enum VerificationStatus {
-  PENDING
-  UNDER_REVIEW
-  VERIFIED
-  REJECTED
-  SUSPENDED
+    PENDING
+    UNDER_REVIEW
+    VERIFIED
+    REJECTED
+    SUSPENDED
+}
+
+enum AccountCategory {
+    PERSONAL
+    BUSINESS
+    MERCHANT
+}
+
+enum DeviceType {
+    DESKTOP
+    LAPTOP
+    MOBILE
+    TABLET
+    SMART_TV
+    UNKNOWN
+}
+
+enum SessionStatus {
+    ACTIVE
+    EXPIRED
+    REVOKED
+}
+
+enum RevokedReason {
+    USER_LOGOUT
+    PASSWORD_CHANGED
+    ADMIN_REVOKED
+    SUSPICIOUS_ACTIVITY
+    TOKEN_REUSE
 }
 
 model User {
+    // ======================================================
+    // Identity
+    // ======================================================
 
-  // =====================================================
-  // Identity
-  // =====================================================
+    id String @id @default(uuid())
 
-  id String @id @default(uuid())
+    userNumber String @unique
 
-  userNumber String @unique
+    // ======================================================
+    // Authentication
+    // ======================================================
 
-  // =====================================================
-  // Authentication
-  // =====================================================
+    email String @unique
 
-  email String @unique
+    passwordHash String
 
-  passwordHash String
+    // ======================================================
+    // Authorization
+    // ======================================================
 
-  // =====================================================
-  // Authorization
-  // =====================================================
+    role UserRole @default(USER)
 
-  role UserRole @default(USER)
+    status UserStatus @default(PENDING)
 
-  status UserStatus @default(PENDING)
+    // ======================================================
+    // Verification
+    // ======================================================
 
-  // =====================================================
-  // Verification
-  // =====================================================
+    emailVerified Boolean @default(false)
 
-  emailVerified Boolean @default(false)
+    phoneVerified Boolean @default(false)
 
-  phoneVerified Boolean @default(false)
+    lastLoginAt DateTime?
 
-  lastLoginAt DateTime?
+    // ======================================================
+    // Relationships
+    // ======================================================
 
-  // =====================================================
-  // Relationships
-  // =====================================================
+    profile Profile?
 
-  profile Profile?
+    sessions Session[]
 
-  sessions Session[]
+    // ======================================================
+    // Audit
+    // ======================================================
 
-  // =====================================================
-  // Audit
-  // =====================================================
+    createdAt DateTime @default(now())
 
-  createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  updatedAt DateTime @updatedAt
+    @@index([email])
+    @@map("users")
+}
 
-  @@index([email])
+model Profile {
+    // ======================================================
+    // Identity
+    // ======================================================
 
-  @@map("users")
+    id String @id @default(uuid())
 
+    profileNumber String @unique
+
+    userId String @unique
+
+    // ======================================================
+    // Personal Information
+    // ======================================================
+
+    displayName String
+
+    legalName String
+
+    firstName String
+
+    middleName String?
+
+    lastName String
+
+    birthDate DateTime?
+
+    // ======================================================
+    // Contact
+    // ======================================================
+
+    phoneCountryCode String? // BR, HT, US...
+
+    phoneNumber String?
+
+    avatarUrl String?
+
+    // ======================================================
+    // Localization
+    // ======================================================
+
+    languageCode String?
+
+    timezoneId String?
+
+    // ======================================================
+    // Verification
+    // ======================================================
+
+    verificationStatus VerificationStatus @default(PENDING)
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete Cascade
+    )
+
+    accounts Account[]
+
+    addresses Address[]
+
+    documents IdentityDocument[]
+
+    preferences Preference?
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([displayName])
+    @@index([legalName])
+    @@map("profiles")
+}
+
+model Session {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    sessionNumber String @unique
+
+    userId String
+
+    // ======================================================
+    // Authentication
+    // ======================================================
+
+    refreshTokenHash String
+
+    mfaVerifiedAt DateTime?
+
+    // ======================================================
+    // Device
+    // ======================================================
+
+    deviceName String?
+
+    deviceType DeviceType @default(UNKNOWN)
+
+    operatingSystem String?
+
+    browser String?
+
+    browserVersion String?
+
+    deviceFingerprint String?
+
+    isTrusted Boolean @default(false)
+
+    // ======================================================
+    // Network
+    // ======================================================
+
+    ipAddress String?
+
+    countryCode String?
+
+    city String?
+
+    // ======================================================
+    // Lifecycle
+    // ======================================================
+
+    status SessionStatus @default(ACTIVE)
+
+    lastActivityAt DateTime?
+
+    expiresAt DateTime
+
+    revokedAt DateTime?
+
+    revokedReason RevokedReason?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete Cascade
+    )
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    @@index([userId])
+    @@index([status])
+    @@index([expiresAt])
+    @@index([deviceFingerprint])
+    @@map("sessions")
 }

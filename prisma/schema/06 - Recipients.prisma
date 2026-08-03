@@ -1,0 +1,70 @@
+enum RecipientType {
+  PERSONAL
+  BUSINESS
+  MERCHANT
+}
+
+enum RecipientStatus {
+  ACTIVE
+  BLOCKED
+}
+
+model Recipient {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  recipientNumber String @unique
+
+  ownerAccountId String
+
+  destinationAccountId String
+
+  // ======================================================
+  // Information
+  // ======================================================
+
+  displayName String
+
+  accountNumber String
+
+  type RecipientType
+
+  status RecipientStatus @default(ACTIVE)
+
+  nickname String?
+
+  avatarUrl String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  ownerAccount Account @relation(
+  "OwnerRecipients",
+  fields: [ownerAccountId],
+  references: [id],
+  onDelete Cascade
+  )
+
+  destinationAccount Account @relation(
+  "DestinationRecipients",
+  fields: [destinationAccountId],
+  references id[]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([ownerAccountId, destinationAccountId])
+  @@index([ownerAccountId])
+  @@index([destinationAccountId])
+  @@map("recipients")
+}

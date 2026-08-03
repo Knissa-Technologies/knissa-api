@@ -1,0 +1,130 @@
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  EXCHANGE
+  PAYMENT
+  REFUND
+  FEE
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REVERSED
+}
+
+model Transaction {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  transactionNumber String @unique
+
+  // ======================================================
+  // Wallets
+  // ======================================================
+
+  sourceWalletId String?
+
+  destinationWalletId String?
+
+  currencyId String
+
+  // ======================================================
+  // Financial
+  // ======================================================
+
+  type TransactionType
+
+  status TransactionStatus @default(PENDING)
+
+  amount Decimal @db.Decimal(20, 8)
+
+  feeAmount Decimal @default(0) @db.Decimal(20, 8)
+
+  netAmount Decimal @db.Decimal(20, 8)
+
+  description String?
+
+  externalReference String?
+
+  idempotencyKey String? @unique
+
+  completedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  sourceWallet Wallet? @relation(
+  "SourceWallet",
+  fields: [sourceWalletId],
+  references id[]
+  )
+
+  destinationWallet Wallet? @relation(
+  "DestinationWallet",
+  fields: [destinationWalletId],
+  references id[]
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references id[]
+  )
+
+  ledgerEntries LedgerEntry[]
+
+  fees Fee[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([sourceWalletId])
+  @@index([destinationWalletId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model Fee {
+  id String @id @default(uuid())
+
+  feeNumber String @unique
+
+  transactionId String
+
+  name String
+
+  amount Decimal @db.Decimal(20, 8)
+
+  currencyId String
+
+  transaction Transaction @relation(
+  fields:[transactionId],
+  references:[id],
+  onDelete Cascade
+  )
+
+  currency Currency @relation(
+  fields:[currencyId],
+  references id[]
+  )
+
+  createdAt DateTime @default(now())
+
+  @@map("fees")
+}

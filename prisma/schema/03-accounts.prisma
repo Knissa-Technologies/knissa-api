@@ -1,0 +1,99 @@
+enum AccountCategory {
+  PERSONAL
+  BUSINESS
+  MERCHANT
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+model Account {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  accountNumber String @unique
+
+  profileId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  category AccountCategory
+
+  status AccountStatus @default(PENDING)
+
+  displayName String
+
+  legalName String?
+
+  // ======================================================
+  // Localization
+  // ======================================================
+
+  countryId String
+
+  languageId String?
+
+  timezoneId String?
+
+  baseCurrencyId String
+
+  // ======================================================
+  // Configuration
+  // ======================================================
+
+  isDefault Boolean @default(false)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  profile Profile @relation(
+  fields: [profileId],
+  references: [id],
+  onDelete Cascade
+  )
+
+  country Country @relation(
+  fields: [countryId],
+  references id[]
+  )
+
+  language Language? @relation(
+  fields: [languageId],
+  references id[]
+  )
+
+  timezone Timezone? @relation(
+  fields: [timezoneId],
+  references id[]
+  )
+
+  baseCurrency Currency @relation(
+  fields: [baseCurrencyId],
+  references id[]
+  )
+
+  wallets Wallet[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([countryId])
+  @@index([status])
+  @@map("accounts")
+}
