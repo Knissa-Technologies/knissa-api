@@ -1,0 +1,78 @@
+enum UserRole {
+  USER
+  SUPPORT
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+model User {
+
+  // =====================================================
+  // Identity
+  // =====================================================
+
+  id String @id @default(uuid())
+
+  userNumber String @unique
+
+  // =====================================================
+  // Authentication
+  // =====================================================
+
+  email String @unique
+
+  passwordHash String
+
+  // =====================================================
+  // Authorization
+  // =====================================================
+
+  role UserRole @default(USER)
+
+  status UserStatus @default(PENDING)
+
+  // =====================================================
+  // Verification
+  // =====================================================
+
+  emailVerified Boolean @default(false)
+
+  phoneVerified Boolean @default(false)
+
+  lastLoginAt DateTime?
+
+  // =====================================================
+  // Relationships
+  // =====================================================
+
+  profile Profile?
+
+  sessions Session[]
+
+  // =====================================================
+  // Audit
+  // =====================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+
+  @@map("users")
+
+}
