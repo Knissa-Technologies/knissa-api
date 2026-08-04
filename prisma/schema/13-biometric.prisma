@@ -1,0 +1,94 @@
+enum BiometricType {
+  FINGERPRINT
+  FACE
+  IRIS
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+  WINDOWS
+  MACOS
+  LINUX
+}
+
+model BiometricCredential {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id                String @id @default(uuid())
+  biometricNumber   String @unique
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  userId            String
+  sessionId         String?
+
+  // ======================================================
+  // Device
+  // ======================================================
+
+  deviceId          String
+  deviceName        String?
+
+  platform          DevicePlatform
+
+  // ======================================================
+  // Credential
+  // ======================================================
+
+  biometricType     BiometricType
+
+  credentialId      String @unique
+  publicKey         String
+
+  signCount         Int @default(0)
+
+  // ======================================================
+  // Status
+  // ======================================================
+
+  isEnabled         Boolean @default(true)
+
+  isPrimary         Boolean @default(false)
+
+  verifiedAt        DateTime?
+
+  lastUsedAt        DateTime?
+
+  revokedAt         DateTime?
+
+  revokedReason     String?
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // ======================================================
+  // Relations
+  // ======================================================
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  session Session? @relation(fields: [sessionId], references: [id])
+
+  // ======================================================
+  // Indexes
+  // ======================================================
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([deviceId])
+  @@index([platform])
+  @@index([isEnabled])
+  @@index([lastUsedAt])
+
+  @@map("biometric_credentials")
+}
