@@ -1,96 +1,34 @@
 import "dotenv/config";
+
 import { prisma } from "../src/infra/database/prisma.js";
+
+import { seedCountries } from "./seeds/countries.seed.js";
+import { seedCurrencies} from "./seeds/currencies.seed.js";
+import { seedLanguages } from "./seeds/languages.seed.js";
+import { seedTimezones } from "./seeds/timezones.seed.js";
+import { seedCountryCurrencies } from "./seeds/country-currencies.seed.js";
+import { seedCountryLanguages } from "./seeds/country-languages.seed.js";
+import { seedCountryTimezones } from "./seeds/country-timezones.seed.js";
+import { seedNotificationProviders } from "./seeds/notification-providers.seed.js";
 
 async function main() {
   console.log("======================================");
   console.log("🌱 Starting Knissa Seed...");
   console.log("======================================");
 
-  // =====================================================
-  // COUNTRIES
-  // =====================================================
+  await seedCountries();
+  await seedCurrencies();
+  await seedLanguages();
+  await seedTimezones();
 
-  console.log("\n🌍 Seeding countries...");
+  await seedCountryCurrencies();
+  await seedCountryLanguages();
+  await seedCountryTimezones();
 
-  await prisma.country.createMany({
-    data: [
-      {
-        name: "Brazil",
-        isoCode: "BR",
-        phoneCode: "+55",
-        currencyCode: "BRL",
-      },
-      {
-        name: "Haiti",
-        isoCode: "HT",
-        phoneCode: "+509",
-        currencyCode: "HTG",
-      },
-      {
-        name: "United States",
-        isoCode: "US",
-        phoneCode: "+1",
-        currencyCode: "USD",
-      },
-      {
-        name: "Canada",
-        isoCode: "CA",
-        phoneCode: "+1",
-        currencyCode: "CAD",
-      },
-      {
-        name: "France",
-        isoCode: "FR",
-        phoneCode: "+33",
-        currencyCode: "EUR",
-      },
-    ],
-    skipDuplicates: true,
-  });
-
-  console.table(await prisma.country.findMany());
-
-  // =====================================================
-  // CURRENCIES
-  // =====================================================
-
-  console.log("\n💰 Seeding currencies...");
-
-  await prisma.currency.createMany({
-    data: [
-      {
-        code: "BRL",
-        name: "Brazilian Real",
-        symbol: "R$",
-      },
-      {
-        code: "USD",
-        name: "US Dollar",
-        symbol: "$",
-      },
-      {
-        code: "HTG",
-        name: "Haitian Gourde",
-        symbol: "G",
-      },
-      {
-        code: "CAD",
-        name: "Canadian Dollar",
-        symbol: "C$",
-      },
-      {
-        code: "EUR",
-        name: "Euro",
-        symbol: "€",
-      },
-    ],
-    skipDuplicates: true,
-  });
-
-  console.table(await prisma.currency.findMany());
+  await seedNotificationProviders();
 
   console.log("\n======================================");
-  console.log("✅ Knissa seed completed successfully!");
+  console.log("✅ Knissa Seed completed successfully!");
   console.log("======================================");
 }
 

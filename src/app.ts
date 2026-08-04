@@ -1,121 +1,17 @@
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
-import morgan from "morgan";
-import swaggerUi from "swagger-ui-express";
-import YAML from "yamljs";
-
-import { logger } from "./config/logger.js";
-
-import authRoutes from "./modules/auth/routes.js";
-import usersRoutes from "./modules/users/routes.js";
-import walletRoutes from "./modules/wallets/routes.js";
-import paymentRoutes from "./modules/payments/routes.js";
-import exchangeRoutes from "./modules/exchange/routes.js";
-import exchangeRateRoutes from "./modules/exchange-rates/routes.js";
-import transactionRoutes from "./modules/transactions/routes.js";
-import ledgerRoutes from "./modules/ledger/routes.js";
-import countryRoutes from "./modules/countries/routes.js";
-import currencyRoutes from "./modules/currencies/routes.js";
-import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
-
-
-
-import { HealthController } from "./shared/controllers/HealthController.js";
-import { errorMiddleware } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-// ======================================================
-// Security
-// ======================================================
-
-app.use(helmet());
-
-app.use(
-  cors({
-    origin: ["http://localhost:4200", "http://localhost:3000"],
-    credentials: true,
-  }),
-);
-
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-app.use(morgan("dev"));
-
-// ======================================================
-// Swagger
-// ======================================================
-
-try {
-  const swaggerDocument = YAML.load("./docs/openapi/openapi.yaml");
-
-  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-} catch (error) {
-  logger.error(error, "Swagger could not be loaded.");
-}
-
-// ======================================================
-// Health
-// ======================================================
-
-const healthController = new HealthController();
-
-app.get("/", (_req, res) => {
-  return res.status(200).json({
+app.get("/", (req, res) => {
+  res.json({
     name: "Knissa API",
-    version: "1.0.0",
+    version: "2.0.0",
     status: "running",
-    documentation: "/api-docs",
   });
 });
 
-app.get("/health", (req, res) => {
-  return healthController.handle(req, res);
-});
-
-// ======================================================
-// API Routes
-// ======================================================
-
-app.use("/auth", authRoutes);
-
-app.use("/users", usersRoutes);
-
-app.use("/wallets", walletRoutes);
-
-app.use("/payments", paymentRoutes);
-
-app.use("/exchange", exchangeRoutes);
-
-app.use("/exchange-rates", exchangeRateRoutes);
-
-app.use("/transactions", transactionRoutes);
-
-app.use("/ledger", ledgerRoutes);
-
-app.use("/countries", countryRoutes);
-
-app.use("/currencies", currencyRoutes);
-
-app.use("/dashboard", dashboardRoutes);
-
-// ======================================================
-// Route Not Found
-// ======================================================
-
-app.use((_req, res) => {
-  return res.status(404).json({
-    success: false,
-    message: "Route not found.",
-  });
-});
-
-// ======================================================
-// Global Error Handler
-// ======================================================
-
-app.use(errorMiddleware);
-
-export default app;
+export { app };

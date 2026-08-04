@@ -1,24 +1,7 @@
-import "dotenv/config";
+import { app } from "./app.js";
 
-import app from "./app.js";
+const PORT = process.env.PORT || 3000;
 
-
-import listEndpoints from "express-list-endpoints";
-
-
-console.table(listEndpoints(app));
-
-const PORT = Number(process.env.PORT) || 3000;
-
-const server = app.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════════╗
-║          KNISSA API v1.0             ║
-╠══════════════════════════════════════╣
-║ Server : http://localhost:${PORT}
-║ Status : Running 🚀
-╚══════════════════════════════════════╝
-`);
+app.listen(PORT, () => {
+  console.log(`🚀 Knissa API running on port ${PORT}`);
 });
-
-export default server;
