@@ -1,0 +1,260 @@
+enum ExchangeStatus {
+    PENDING
+    PROCESSING
+    COMPLETED
+    FAILED
+    CANCELLED
+}
+
+enum ExchangeRateProvider {
+    INTERNAL
+    MANUAL
+    ECB
+    FIXER
+    OPEN_EXCHANGE
+    CUSTOM
+}
+
+enum ExchangeQuoteStatus {
+    ACTIVE
+    ACCEPTED
+    EXPIRED
+    CANCELLED
+}
+
+model ExchangeRate {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    rateNumber String @unique
+
+    // ======================================================
+    // Currencies
+    // ======================================================
+
+    baseCurrencyId String
+
+    quoteCurrencyId String
+
+    // ======================================================
+    // Rate
+    // ======================================================
+
+    rate Decimal @db.Decimal(20, 10)
+
+    provider ExchangeRateProvider
+
+    validFrom DateTime
+
+    validUntil DateTime?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    baseCurrency Currency @relation(
+    "BaseCurrency",
+    fields: [baseCurrencyId],
+    references id[]
+    )
+
+    quoteCurrency Currency @relation(
+    "QuoteCurrency",
+    fields: [quoteCurrencyId],
+    references id[]
+    )
+
+    exchanges Exchange[]
+
+    quotes ExchangeQuote[]
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([baseCurrencyId])
+    @@index([quoteCurrencyId])
+    @@map("exchange_rates")
+}
+
+model Exchange {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    exchangeNumber String @unique
+
+    transactionId String
+
+    exchangeRateId String
+
+    quoteId String @unique
+
+    // ======================================================
+    // Wallets
+    // ======================================================
+
+    sourceWalletId String
+
+    destinationWalletId String
+
+    // ======================================================
+    // Amounts
+    // ======================================================
+
+    sourceAmount Decimal @db.Decimal(20, 8)
+
+    destinationAmount Decimal @db.Decimal(20, 8)
+
+    exchangeFee Decimal @default(0) @db.Decimal(20, 8)
+
+    // ======================================================
+    // Status
+    // ======================================================
+
+    status ExchangeStatus @default(PENDING)
+
+    completedAt DateTime?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    transaction Transaction @relation(
+    fields: [transactionId],
+    references id[]
+    )
+
+    exchangeRate ExchangeRate @relation(
+    fields: [exchangeRateId],
+    references id[]
+    )
+
+    sourceWallet Wallet @relation(
+    "ExchangeSourceWallet",
+    fields: [sourceWalletId],
+    references id[]
+    )
+
+    destinationWallet Wallet @relation(
+    "ExchangeDestinationWallet",
+    fields: [destinationWalletId],
+    references id[]
+    )
+
+    quote ExchangeQuote @relation(
+    fields: [quoteId],
+    references id[]
+    )
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([transactionId])
+    @@index([exchangeRateId])
+    @@index([quoteId])
+    @@index([sourceWalletId])
+    @@index([destinationWalletId])
+    @@index([status])
+    @@map("exchanges")
+}
+
+model ExchangeQuote {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    quoteNumber String @unique
+
+    accountId String
+
+    exchangeRateId String
+
+    // ======================================================
+    // Wallets
+    // ======================================================
+
+    sourceWalletId String
+
+    destinationWalletId String
+
+    // ======================================================
+    // Amounts
+    // ======================================================
+
+    sourceAmount Decimal @db.Decimal(20, 8)
+
+    destinationAmount Decimal @db.Decimal(20, 8)
+
+    exchangeFee Decimal @default(0) @db.Decimal(20, 8)
+
+    // ======================================================
+    // Status
+    // ======================================================
+
+    status ExchangeQuoteStatus @default(ACTIVE)
+
+    expiresAt DateTime
+
+    acceptedAt DateTime?
+
+    // ======================================================
+    // Relationships
+    // ======================================================
+
+    account Account @relation(
+    fields: [accountId],
+    references id[]
+    )
+
+    exchangeRate ExchangeRate @relation(
+    fields: [exchangeRateId],
+    references id[]
+    )
+
+    sourceWallet Wallet @relation(
+    "QuoteSourceWallet",
+    fields: [sourceWalletId],
+    references id[]
+    )
+
+    destinationWallet Wallet @relation(
+    "QuoteDestinationWallet",
+    fields: [destinationWalletId],
+    references id[]
+    )
+
+    exchange Exchange?
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([accountId])
+    @@index([exchangeRateId])
+    @@index([sourceWalletId])
+    @@index([destinationWalletId])
+    @@index([status])
+    @@index([expiresAt])
+    @@map("exchange_quotes")
+}

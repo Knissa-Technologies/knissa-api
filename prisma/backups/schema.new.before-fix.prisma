@@ -1,0 +1,2286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ======================================================
+// KNISSA CORE SCHEMA
+// Version: 2.0
+// ======================================================
+//
+// Order:
+//
+// 1. Enums
+// 2. Identity
+// 3. Localization
+// 4. Accounts
+// 5. Wallets
+// 6. Transactions
+// 7. Recipients
+// 8. Exchange
+// 9. Payments
+// 10. Notifications
+// 11. Merchant
+// 12. Compliance
+
+
+// ======================================================
+// Identity Domain
+// ======================================================
+
+enum UserRole {
+  USER
+  SUPPORT
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
+enum DeviceType {
+  DESKTOP
+  LAPTOP
+  MOBILE
+  TABLET
+  SMART_TV
+  UNKNOWN
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum RevokedReason {
+  USER_LOGOUT
+  PASSWORD_CHANGED
+  ADMIN_REVOKED
+  SUSPICIOUS_ACTIVITY
+  TOKEN_REUSE
+}
+
+model User {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Authentication
+  // ======================================================
+
+  email String @unique
+
+  passwordHash String
+
+  // ======================================================
+  // Authorization
+  // ======================================================
+
+  role UserRole @default(USER)
+
+  status UserStatus @default(PENDING)
+
+  // ======================================================
+  // Verification
+  // ======================================================
+
+  emailVerified Boolean @default(false)
+
+  phoneVerified Boolean @default(false)
+
+  lastLoginAt DateTime?
+
+  deletedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  profile Profile?
+
+  sessions Session[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+model Profile {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  userId String @unique
+
+  // ======================================================
+  // Personal Information
+  // ======================================================
+
+  displayName String
+
+  legalName String
+
+  firstName String
+
+  middleName String?
+
+  lastName String
+
+  birthDate DateTime?
+
+  // ======================================================
+  // Contact
+  // ======================================================
+
+  phoneCountryCode String?
+
+  phoneNumber String?
+
+  avatarUrl String?
+
+  // ======================================================
+  // Localization
+  // ======================================================
+
+  languageCode String?
+
+  timezoneId String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  user User @relation(
+  fields: [userId],
+  references: [id],
+  onDelete: Cascade
+  )
+
+  accounts Account[]
+
+  addresses Address[]
+
+  userPreferences UserPreference?
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([displayName])
+  @@index([legalName])
+  @@map("profiles")
+}
+
+model Session {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  userId String
+
+  // ======================================================
+  // Authentication
+  // ======================================================
+
+  refreshTokenHash String
+
+  mfaVerifiedAt DateTime?
+
+  // ======================================================
+  // Device
+  // ======================================================
+
+  deviceName String?
+
+  deviceType DeviceType @default(UNKNOWN)
+
+  operatingSystem String?
+
+  browser String?
+
+  browserVersion String?
+
+  fingerprint String?
+
+  isTrusted Boolean @default(false)
+
+  // ======================================================
+  // Network
+  // ======================================================
+
+  ipAddress String?
+
+  countryCode String?
+
+  city String?
+
+  // ======================================================
+  // Lifecycle
+  // ======================================================
+
+  status SessionStatus @default(ACTIVE)
+
+  lastActivityAt DateTime?
+
+  expiresAt DateTime
+
+  revokedAt DateTime?
+
+  revokedReason RevokedReason?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  user User @relation(
+  fields: [userId],
+  references: [id],
+  onDelete: Cascade
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([fingerprint])
+  @@index([lastActivityAt])
+  @@map("sessions")
+}
+
+// ======================================================
+// Localization Domain
+// ======================================================
+
+model Country {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // ISO
+  // ======================================================
+
+  iso2Code String @unique
+
+  iso3Code String @unique
+
+  numericCode String?
+
+  // ======================================================
+  // Information
+  // ======================================================
+
+  name String
+
+  officialName String?
+
+  flagEmoji String?
+
+  // ======================================================
+  // Phone
+  // ======================================================
+
+  phoneCode String
+
+  // ======================================================
+  // Postal
+  // ======================================================
+
+  postalCodeLabel String
+
+  postalCodePattern String?
+
+  // ======================================================
+  // Status
+  // ======================================================
+
+  isActive Boolean @default(true)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  currencies CountryCurrency[]
+
+  languages CountryLanguage[]
+
+  timezones CountryTimezone[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([iso2Code])
+  @@map("countries")
+}
+
+model Currency {
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  code String @unique
+
+  name String
+
+  symbol String
+
+  decimals Int @default(2)
+
+  isActive Boolean @default(true)
+
+  countryCurrencies CountryCurrency[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@map("currencies")
+}
+
+model Language {
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  code String @unique
+
+  name String
+
+  nativeName String
+
+  isActive Boolean @default(true)
+
+  countryLanguages CountryLanguage[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@map("languages")
+}
+
+model Timezone {
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  name String @unique
+
+  utcOffset String
+
+  countryTimezones CountryTimezone[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@map("timezones")
+}
+
+model CountryCurrency {
+  countryId String
+
+  currencyId String
+
+  isDefault Boolean @default(false)
+
+  country Country @relation(
+  fields: [countryId],
+  references: [id]
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references: [id]
+  )
+
+  @@id([countryId, currencyId])
+  @@index([countryId])
+  @@index([currencyId])
+  @@map("country_currencies")
+}
+
+model CountryLanguage {
+  countryId String
+
+  languageId String
+
+  isOfficial Boolean @default(true)
+
+  country Country @relation(
+  fields: [countryId],
+  references: [id]
+  )
+
+  language Language @relation(
+  fields: [languageId],
+  references: [id]
+  )
+
+  @@id([countryId, languageId])
+  @@index([countryId])
+  @@index([languageId])
+  @@map("country_languages")
+}
+
+model CountryTimezone {
+  countryId String
+
+  timezoneId String
+
+  isDefault Boolean @default(false)
+
+  country Country @relation(
+  fields: [countryId],
+  references: [id]
+  )
+
+  timezone Timezone @relation(
+  fields: [timezoneId],
+  references: [id]
+  )
+
+  @@id([countryId, timezoneId])
+  @@index([countryId])
+  @@index([timezoneId])
+  @@map("country_timezones")
+}
+
+// ======================================================
+// Accounts Domain
+// ======================================================
+
+enum AccountCategory {
+  PERSONAL
+  BUSINESS
+  MERCHANT
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+model Account {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  profileId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  category AccountCategory
+
+  status AccountStatus @default(PENDING)
+
+  displayName String
+
+  legalName String?
+
+  // ======================================================
+  // Localization
+  // ======================================================
+
+  countryId String
+
+  languageId String?
+
+  timezoneId String?
+
+  baseCurrencyId String
+
+  // ======================================================
+  // Configuration
+  // ======================================================
+
+  isDefault Boolean @default(false)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  profile Profile @relation(
+  fields: [profileId],
+  references: [id],
+  onDelete: Cascade
+  )
+
+  country Country @relation(
+  fields: [countryId],
+  references: [id]
+  )
+
+  language Language? @relation(
+  fields: [languageId],
+  references: [id]
+  )
+
+  timezone Timezone? @relation(
+  fields: [timezoneId],
+  references: [id]
+  )
+
+  baseCurrency Currency @relation(
+  fields: [baseCurrencyId],
+  references: [id]
+  )
+
+  wallets Wallet[]
+
+  ownedRecipients Recipient[] @relation("OwnerRecipients")
+
+  destinationRecipients Recipient[] @relation("DestinationRecipients")
+
+  notifications Notification[]
+
+  merchant Merchant?
+
+  complianceProfile ComplianceProfile?
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([countryId])
+  @@index([baseCurrencyId])
+  @@index([status])
+  @@index([category])
+  @@map("accounts")
+}
+
+// ======================================================
+// Wallet Domain
+// ======================================================
+
+enum WalletStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+model Wallet {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  accountId String
+
+  currencyId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  status WalletStatus @default(PENDING)
+
+  isDefault Boolean @default(false)
+
+  // ======================================================
+  // Balance Cache
+  // ======================================================
+
+  availableBalance Decimal @default(0) @db.Decimal(20, 8)
+
+  reservedBalance Decimal @default(0) @db.Decimal(20, 8)
+
+  totalBalance Decimal @default(0) @db.Decimal(20, 8)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+  fields: [accountId],
+  references: [id],
+  onDelete: Cascade
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references: [id]
+  )
+
+  ledgerEntries LedgerEntry[]
+
+  transactions Transaction[]
+
+  sourceExchanges Exchange[] @relation("ExchangeSourceWallet")
+
+  destinationExchanges Exchange[] @relation("ExchangeDestinationWallet")
+
+  sourceQuotes ExchangeQuote[] @relation("QuoteSourceWallet")
+
+  destinationQuotes ExchangeQuote[] @relation("QuoteDestinationWallet")
+
+  payments Payment[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, currencyId])
+  @@index([accountId])
+  @@index([currencyId])
+  @@index([status])
+  @@map("wallets")
+}
+
+enum LedgerEntryType {
+  CREDIT
+  DEBIT
+}
+
+model LedgerEntry {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  walletId String
+
+  transactionId String
+
+  currencyId String
+
+  // ======================================================
+  // Financial
+  // ======================================================
+
+  entryType LedgerEntryType
+
+  amount Decimal @db.Decimal(20, 8)
+
+  balanceAfter Decimal @db.Decimal(20, 8)
+
+  description String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  wallet Wallet @relation(
+  fields: [walletId],
+  references: [id]
+  )
+
+  transaction Transaction @relation(
+  fields: [transactionId],
+  references: [id]
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  @@index([walletId])
+  @@index([transactionId])
+  @@index([currencyId])
+  @@index([entryType])
+  @@map("ledger_entries")
+}
+
+// ======================================================
+// Transactions Domain
+// ======================================================
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  EXCHANGE
+  PAYMENT
+  REFUND
+  FEE
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REVERSED
+}
+
+model Transaction {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Wallets
+  // ======================================================
+
+  sourceWalletId String?
+
+  destinationWalletId String?
+
+  currencyId String
+
+  // ======================================================
+  // Financial
+  // ======================================================
+
+  type TransactionType
+
+  status TransactionStatus @default(PENDING)
+
+  amount Decimal @db.Decimal(20, 8)
+
+  feeAmount Decimal @default(0) @db.Decimal(20, 8)
+
+  netAmount Decimal @db.Decimal(20, 8)
+
+  description String?
+
+  externalReference String?
+
+  idempotencyKey String? @unique
+
+  completedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  sourceWallet Wallet? @relation(
+  "SourceWallet",
+  fields: [sourceWalletId],
+  references: [id]
+  )
+
+  destinationWallet Wallet? @relation(
+  "DestinationWallet",
+  fields: [destinationWalletId],
+  references: [id]
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references: [id]
+  )
+
+  ledgerEntries LedgerEntry[]
+
+  fees Fee[]
+
+  exchange Exchange?
+
+  payment Payment?
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([sourceWalletId])
+  @@index([destinationWalletId])
+  @@index([currencyId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model Fee {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  transactionId String
+
+  currencyId String
+
+  // ======================================================
+  // Fee
+  // ======================================================
+
+  name String
+
+  amount Decimal @db.Decimal(20, 8)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  transaction Transaction @relation(
+  fields: [transactionId],
+  references: [id],
+  onDelete: Cascade
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([transactionId])
+  @@index([currencyId])
+  @@map("fees")
+}
+
+// ======================================================
+// Recipients Domain
+// ======================================================
+
+enum RecipientType {
+  PERSONAL
+  BUSINESS
+  MERCHANT
+}
+
+enum RecipientStatus {
+  ACTIVE
+  BLOCKED
+}
+
+model Recipient {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  ownerAccountId String
+
+  destinationAccountId String
+
+  // ======================================================
+  // Information
+  // ======================================================
+
+  displayName String
+
+  accountNumber String
+
+  type RecipientType
+
+  status RecipientStatus @default(ACTIVE)
+
+  nickname String?
+
+  avatarUrl String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  ownerAccount Account @relation(
+  "OwnerRecipients",
+  fields: [ownerAccountId],
+  references: [id],
+  onDelete: Cascade
+  )
+
+  destinationAccount Account @relation(
+  "DestinationRecipients",
+  fields: [destinationAccountId],
+  references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([ownerAccountId, destinationAccountId])
+  @@index([ownerAccountId])
+  @@index([destinationAccountId])
+  @@index([status])
+  @@map("recipients")
+}
+
+
+// ======================================================
+// Exchange Domain
+// ======================================================
+
+enum ExchangeStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ExchangeRateProvider {
+  INTERNAL
+  MANUAL
+  ECB
+  FIXER
+  OPEN_EXCHANGE
+  CUSTOM
+}
+
+enum ExchangeQuoteStatus {
+  ACTIVE
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+model ExchangeRate {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Currencies
+  // ======================================================
+
+  baseCurrencyId String
+
+  quoteCurrencyId String
+
+  // ======================================================
+  // Rate
+  // ======================================================
+
+  rate Decimal @db.Decimal(20,10)
+
+  provider ExchangeRateProvider
+
+  validFrom DateTime
+
+  validUntil DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  baseCurrency Currency @relation(
+    "BaseCurrency",
+    fields: [baseCurrencyId],
+    references: [id]
+  )
+
+  quoteCurrency Currency @relation(
+    "QuoteCurrency",
+    fields: [quoteCurrencyId],
+    references: [id]
+  )
+
+  exchanges Exchange[]
+
+  quotes ExchangeQuote[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([baseCurrencyId])
+
+  @@index([quoteCurrencyId])
+
+  @@index([provider])
+
+  @@map("exchange_rates")
+}
+
+model Exchange {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  transactionId String
+
+  exchangeRateId String
+
+  quoteId String @unique
+
+  // ======================================================
+  // Wallets
+  // ======================================================
+
+  sourceWalletId String
+
+  destinationWalletId String
+
+  // ======================================================
+  // Amounts
+  // ======================================================
+
+  sourceAmount Decimal @db.Decimal(20,8)
+
+  destinationAmount Decimal @db.Decimal(20,8)
+
+  exchangeFee Decimal @default(0) @db.Decimal(20,8)
+
+  // ======================================================
+  // Status
+  // ======================================================
+
+  status ExchangeStatus @default(PENDING)
+
+  completedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  transaction Transaction @relation(
+    fields: [transactionId],
+    references: [id]
+  )
+
+  exchangeRate ExchangeRate @relation(
+    fields: [exchangeRateId],
+    references: [id]
+  )
+
+  sourceWallet Wallet @relation(
+    "ExchangeSourceWallet",
+    fields: [sourceWalletId],
+    references: [id]
+  )
+
+  destinationWallet Wallet @relation(
+    "ExchangeDestinationWallet",
+    fields: [destinationWalletId],
+    references: [id]
+  )
+
+  quote ExchangeQuote @relation(
+    fields: [quoteId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([transactionId])
+
+  @@index([exchangeRateId])
+
+  @@index([quoteId])
+
+  @@index([sourceWalletId])
+
+  @@index([destinationWalletId])
+
+  @@index([status])
+
+  @@map("exchanges")
+}
+
+model ExchangeQuote {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  accountId String
+
+  exchangeRateId String
+
+  // ======================================================
+  // Wallets
+  // ======================================================
+
+  sourceWalletId String
+
+  destinationWalletId String
+
+  // ======================================================
+  // Amounts
+  // ======================================================
+
+  sourceAmount Decimal @db.Decimal(20,8)
+
+  destinationAmount Decimal @db.Decimal(20,8)
+
+  exchangeFee Decimal @default(0) @db.Decimal(20,8)
+
+  // ======================================================
+  // Status
+  // ======================================================
+
+  status ExchangeQuoteStatus @default(ACTIVE)
+
+  expiresAt DateTime
+
+  acceptedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  exchangeRate ExchangeRate @relation(
+    fields: [exchangeRateId],
+    references: [id]
+  )
+
+  sourceWallet Wallet @relation(
+    "QuoteSourceWallet",
+    fields: [sourceWalletId],
+    references: [id]
+  )
+
+  destinationWallet Wallet @relation(
+    "QuoteDestinationWallet",
+    fields: [destinationWalletId],
+    references: [id]
+  )
+
+  exchange Exchange?
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+
+  @@index([exchangeRateId])
+
+  @@index([sourceWalletId])
+
+  @@index([destinationWalletId])
+
+  @@index([status])
+
+  @@index([expiresAt])
+
+  @@map("exchange_quotes")
+}
+
+// ======================================================
+// Payments Domain
+// ======================================================
+
+enum PaymentMethod {
+  WALLET
+  BANK_TRANSFER
+  CARD
+  PIX
+  QR_CODE
+  PAYMENT_LINK
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentType {
+  PURCHASE
+  BILL_PAYMENT
+  QR_PAYMENT
+  PAYMENT_LINK
+  SUBSCRIPTION
+  DONATION
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  CANCELLED
+  EXPIRED
+}
+
+model Payment {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  accountId String
+
+  transactionId String
+
+  merchantId String?
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  type PaymentType
+
+  method PaymentMethod
+
+  status PaymentStatus @default(PENDING)
+
+  description String?
+
+  externalReference String?
+
+  // ======================================================
+  // Financial
+  // ======================================================
+
+  amount Decimal @db.Decimal(20,8)
+
+  feeAmount Decimal @default(0) @db.Decimal(20,8)
+
+  totalAmount Decimal @db.Decimal(20,8)
+
+  // ======================================================
+  // Dates
+  // ======================================================
+
+  completedAt DateTime?
+
+  cancelledAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  transaction Transaction @relation(
+    fields: [transactionId],
+    references: [id]
+  )
+
+  merchant Merchant? @relation(
+    fields: [merchantId],
+    references: [id]
+  )
+
+  invoices Invoice[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+
+  @@index([transactionId])
+
+  @@index([merchantId])
+
+  @@index([status])
+
+  @@index([type])
+
+  @@index([method])
+
+  @@map("payments")
+}
+
+model Invoice {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  paymentId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  status InvoiceStatus @default(OPEN)
+
+  amount Decimal @db.Decimal(20,8)
+
+  dueDate DateTime
+
+  paidAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  payment Payment @relation(
+    fields: [paymentId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([paymentId])
+
+  @@index([status])
+
+  @@index([dueDate])
+
+  @@map("invoices")
+}
+
+// ======================================================
+// Notifications Domain
+// ======================================================
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  CANCELLED
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum NotificationType {
+  SECURITY
+  PAYMENT
+  TRANSFER
+  DEPOSIT
+  WITHDRAWAL
+  EXCHANGE
+  LOGIN
+  MFA
+  KYC
+  SYSTEM
+  MARKETING
+}
+
+enum NotificationProviderType {
+  EMAIL
+  SMS
+  PUSH
+  WHATSAPP
+}
+
+model Notification {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Owner
+  // ======================================================
+
+  accountId String
+
+  // ======================================================
+  // Template / Provider
+  // ======================================================
+
+  templateId String?
+
+  providerId String?
+
+  providerReference String?
+
+  // ======================================================
+  // Notification
+  // ======================================================
+
+  type NotificationType
+
+  channel NotificationChannel
+
+  status NotificationStatus @default(PENDING)
+
+  priority NotificationPriority @default(NORMAL)
+
+  // ======================================================
+  // Content
+  // ======================================================
+
+  subject String?
+
+  title String
+
+  message String
+
+  // ======================================================
+  // Dates
+  // ======================================================
+
+  scheduledAt DateTime?
+
+  sentAt DateTime?
+
+  deliveredAt DateTime?
+
+  readAt DateTime?
+
+  failedAt DateTime?
+
+  cancelledAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  template NotificationTemplate? @relation(
+    fields: [templateId],
+    references: [id]
+  )
+
+  provider NotificationProvider? @relation(
+    fields: [providerId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+
+  @@index([templateId])
+
+  @@index([providerId])
+
+  @@index([status])
+
+  @@index([priority])
+
+  @@index([channel])
+
+  @@index([type])
+
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  code String @unique
+
+  // ======================================================
+  // Template
+  // ======================================================
+
+  name String
+
+  type NotificationType
+
+  channel NotificationChannel
+
+  subject String?
+
+  title String
+
+  body String
+
+  isActive Boolean @default(true)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  notifications Notification[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+
+  @@index([channel])
+
+  @@index([isActive])
+
+  @@map("notification_templates")
+}
+
+model NotificationPreference {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  accountId String
+
+  type NotificationType
+
+  // ======================================================
+  // Channels
+  // ======================================================
+
+  emailEnabled Boolean @default(true)
+
+  smsEnabled Boolean @default(false)
+
+  pushEnabled Boolean @default(true)
+
+  inAppEnabled Boolean @default(true)
+
+  whatsappEnabled Boolean @default(true)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, type])
+
+  @@index([accountId])
+
+  @@map("notification_preferences")
+}
+
+model NotificationProvider {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Provider
+  // ======================================================
+
+  name String
+
+  type NotificationProviderType
+
+  isDefault Boolean @default(false)
+
+  isActive Boolean @default(true)
+
+  configuration Json?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  notifications Notification[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+
+  @@index([isActive])
+
+  @@map("notification_providers")
+}
+
+// ======================================================
+// Merchant Domain
+// ======================================================
+
+enum MerchantType {
+  INDIVIDUAL
+  COMPANY
+  NON_PROFIT
+  GOVERNMENT
+}
+
+enum MerchantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+  CLOSED
+}
+
+enum MerchantRole {
+  OWNER
+  ADMIN
+  MANAGER
+  FINANCE
+  OPERATOR
+  CASHIER
+  SUPPORT
+  VIEWER
+}
+
+model Merchant {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Account
+  // ======================================================
+
+  accountId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  legalName String
+
+  tradeName String?
+
+  merchantType MerchantType
+
+  status MerchantStatus @default(PENDING)
+
+  website String?
+
+  supportEmail String?
+
+  supportPhone String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  members MerchantMember[]
+
+  settings MerchantSettings?
+
+  payments Payment[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId])
+
+  @@index([accountId])
+
+  @@index([status])
+
+  @@index([merchantType])
+
+  @@map("merchants")
+}
+
+model MerchantMember {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchantId String
+
+  accountId String
+
+  invitedByAccountId String?
+
+  // ======================================================
+  // Membership
+  // ======================================================
+
+  role MerchantRole
+
+  isActive Boolean @default(true)
+
+  joinedAt DateTime @default(now())
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchant Merchant @relation(
+    fields: [merchantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  account Account @relation(
+    "MerchantMemberAccount",
+    fields: [accountId],
+    references: [id]
+  )
+
+  invitedBy Account? @relation(
+    "MerchantInvitation",
+    fields: [invitedByAccountId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([merchantId, accountId])
+
+  @@index([merchantId])
+
+  @@index([accountId])
+
+  @@index([role])
+
+  @@map("merchant_members")
+}
+
+model MerchantSettings {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  merchantId String @unique
+
+  // ======================================================
+  // Business Settings
+  // ======================================================
+
+  displayName String?
+
+  logoUrl String?
+
+  websiteUrl String?
+
+  supportEmail String?
+
+  supportPhone String?
+
+  // ======================================================
+  // Localization
+  // ======================================================
+
+  languageCode String?
+
+  timezoneId String?
+
+  currencyCode String?
+
+  // ======================================================
+  // Payments
+  // ======================================================
+
+  allowWalletPayments Boolean @default(true)
+
+  allowQrCodePayments Boolean @default(true)
+
+  allowPaymentLinks Boolean @default(true)
+
+  autoSettlement Boolean @default(false)
+
+  // ======================================================
+  // Notifications
+  // ======================================================
+
+  emailNotifications Boolean @default(true)
+
+  smsNotifications Boolean @default(false)
+
+  pushNotifications Boolean @default(true)
+
+  whatsappNotifications Boolean @default(true)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchant Merchant @relation(
+    fields: [merchantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@map("merchant_settings")
+}
+
+// ======================================================
+// Compliance Domain
+// ======================================================
+
+enum VerificationLevel {
+  NONE
+  BASIC
+  STANDARD
+  ENHANCED
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DocumentType {
+  NATIONAL_ID
+  PASSPORT
+  DRIVER_LICENSE
+  TAX_ID
+  BUSINESS_REGISTRATION
+  PROOF_OF_ADDRESS
+  SELFIE
+  OTHER
+}
+
+enum ComplianceDocumentStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ComplianceDecision {
+  APPROVED
+  REJECTED
+  MANUAL_REVIEW
+}
+
+model ComplianceProfile {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Owner
+  // ======================================================
+
+  accountId String @unique
+
+  // ======================================================
+  // Verification
+  // ======================================================
+
+  verificationLevel VerificationLevel @default(NONE)
+
+  verificationStatus VerificationStatus @default(PENDING)
+
+  riskLevel RiskLevel @default(LOW)
+
+  // ======================================================
+  // Dates
+  // ======================================================
+
+  verifiedAt DateTime?
+
+  expiresAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  documents ComplianceDocument[]
+
+  reviews ComplianceReview[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([verificationStatus])
+
+  @@index([riskLevel])
+
+  @@map("compliance_profiles")
+}
+
+model ComplianceDocument {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  complianceProfileId String
+
+  // ======================================================
+  // Document
+  // ======================================================
+
+  type DocumentType
+
+  countryId String
+
+  documentIdentifier String
+
+  issuingAuthority String?
+
+  issuedAt DateTime?
+
+  expiresAt DateTime?
+
+  // ======================================================
+  // File
+  // ======================================================
+
+  frontImageUrl String?
+
+  backImageUrl String?
+
+  selfieImageUrl String?
+
+  // ======================================================
+  // Verification
+  // ======================================================
+
+  status ComplianceDocumentStatus @default(PENDING)
+
+  verifiedAt DateTime?
+
+  rejectionReason String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  complianceProfile ComplianceProfile @relation(
+    fields: [complianceProfileId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  country Country @relation(
+    fields: [countryId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([complianceProfileId])
+
+  @@index([status])
+
+  @@index([type])
+
+  @@index([countryId])
+
+  @@map("compliance_documents")
+}
+
+model ComplianceReview {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  reference String @unique
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  complianceProfileId String
+
+  reviewedByAccountId String?
+
+  // ======================================================
+  // Decision
+  // ======================================================
+
+  decision ComplianceDecision
+
+  notes String?
+
+  riskScore Int?
+
+  // ======================================================
+  // Dates
+  // ======================================================
+
+  reviewedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  complianceProfile ComplianceProfile @relation(
+    fields: [complianceProfileId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  reviewedBy Account? @relation(
+    fields: [reviewedByAccountId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([complianceProfileId])
+
+  @@index([reviewedByAccountId])
+
+  @@index([decision])
+
+  @@map("compliance_reviews")
+}

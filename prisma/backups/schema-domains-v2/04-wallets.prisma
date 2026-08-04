@@ -1,0 +1,133 @@
+enum WalletStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+model Wallet {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  walletNumber String @unique
+
+  accountId String
+
+  currencyId String
+
+  // ======================================================
+  // Business
+  // ======================================================
+
+  status WalletStatus @default(PENDING)
+
+  isDefault Boolean @default(false)
+
+  // ======================================================
+  // Balance Cache
+  // ======================================================
+
+  availableBalance Decimal @default(0) @db.Decimal(20, 8)
+
+  reservedBalance Decimal @default(0) @db.Decimal(20, 8)
+
+  totalBalance Decimal @default(0) @db.Decimal(20, 8)
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+  fields: [accountId],
+  references: [id],
+  onDelete Cascade
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references id[]
+  )
+
+  ledgerEntries LedgerEntry[]
+
+  transactions Transaction[]
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, currencyId])
+  @@index([accountId])
+  @@index([currencyId])
+  @@map("wallets")
+}
+
+enum LedgerEntryType {
+  CREDIT
+  DEBIT
+}
+
+model LedgerEntry {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  entryNumber String @unique
+
+  walletId String
+
+  transactionId String
+
+  currencyId String
+
+  // ======================================================
+  // Financial
+  // ======================================================
+
+  entryType LedgerEntryType
+
+  amount Decimal @db.Decimal(20, 8)
+
+  balanceAfter Decimal @db.Decimal(20, 8)
+
+  description String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  wallet Wallet @relation(
+  fields: [walletId],
+  references id[]
+  )
+
+  transaction Transaction @relation(
+  fields: [transactionId],
+  references id[]
+  )
+
+  currency Currency @relation(
+  fields: [currencyId],
+  references id[]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  @@index([walletId])
+  @@index([transactionId])
+  @@index([currencyId])
+  @@map("ledger_entries")
+}

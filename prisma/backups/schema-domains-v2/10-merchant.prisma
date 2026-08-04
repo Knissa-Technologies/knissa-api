@@ -1,44 +1,19 @@
-// ======================================================
-// Identity Domain
-// ======================================================
-
-enum UserRole {
-  USER
-  SUPPORT
-  ADMIN
+enum MerchantType {
+  INDIVIDUAL
+  COMPANY
+  NON_PROFIT
+  GOVERNMENT
 }
 
-enum UserStatus {
+enum MerchantStatus {
   PENDING
   ACTIVE
-  BLOCKED
   SUSPENDED
+  BLOCKED
+  CLOSED
 }
 
-enum DeviceType {
-  DESKTOP
-  LAPTOP
-  MOBILE
-  TABLET
-  SMART_TV
-  UNKNOWN
-}
-
-enum SessionStatus {
-  ACTIVE
-  EXPIRED
-  REVOKED
-}
-
-enum RevokedReason {
-  USER_LOGOUT
-  PASSWORD_CHANGED
-  ADMIN_REVOKED
-  SUSPICIOUS_ACTIVITY
-  TOKEN_REUSE
-}
-
-model User {
+model Merchant {
 
   // ======================================================
   // Identity
@@ -49,40 +24,43 @@ model User {
   reference String @unique
 
   // ======================================================
-  // Authentication
+  // Account
   // ======================================================
 
-  email String @unique
-
-  passwordHash String
+  accountId String
 
   // ======================================================
-  // Authorization
+  // Business
   // ======================================================
 
-  role UserRole @default(USER)
+  legalName String
 
-  status UserStatus @default(PENDING)
+  tradeName String?
 
-  // ======================================================
-  // Verification
-  // ======================================================
+  merchantType MerchantType
 
-  emailVerified Boolean @default(false)
+  status MerchantStatus @default(PENDING)
 
-  phoneVerified Boolean @default(false)
+  website String?
 
-  lastLoginAt DateTime?
+  supportEmail String?
 
-  deletedAt DateTime?
+  supportPhone String?
 
   // ======================================================
   // Relationships
   // ======================================================
 
-  profile Profile?
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
 
-  sessions Session[]
+  members MerchantMember[]
+
+  settings MerchantSettings?
+
+  payments Payment[]
 
   // ======================================================
   // Audit
@@ -92,14 +70,27 @@ model User {
 
   updatedAt DateTime @updatedAt
 
-  @@index([email])
+  @@unique([accountId])
 
   @@index([status])
 
-  @@map("users")
+  @@index([merchantType])
+
+  @@map("merchants")
 }
 
-model Profile {
+enum MerchantRole {
+  OWNER
+  ADMIN
+  MANAGER
+  FINANCE
+  OPERATOR
+  CASHIER
+  SUPPORT
+  VIEWER
+}
+
+model MerchantMember {
 
   // ======================================================
   // Identity
@@ -109,33 +100,89 @@ model Profile {
 
   reference String @unique
 
-  userId String @unique
-
   // ======================================================
-  // Personal Information
+  // Relationships
   // ======================================================
 
-  displayName String
+  merchantId String
 
-  legalName String
-
-  firstName String
-
-  middleName String?
-
-  lastName String
-
-  birthDate DateTime?
+  accountId String
 
   // ======================================================
-  // Contact
+  // Membership
   // ======================================================
 
-  phoneCountryCode String?
+  role MerchantRole
 
-  phoneNumber String?
+  isActive Boolean @default(true)
 
-  avatarUrl String?
+  joinedAt DateTime @default(now())
+
+  invitedByAccountId String?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  merchant Merchant @relation(
+    fields: [merchantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id]
+  )
+
+  invitedBy Account? @relation(
+    "MerchantInvitation",
+    fields: [invitedByAccountId],
+    references: [id]
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([merchantId, accountId])
+
+  @@index([merchantId])
+
+  @@index([accountId])
+
+  @@index([role])
+
+  @@map("merchant_members")
+}
+
+model MerchantSettings {
+
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  merchantId String @unique
+
+  // ======================================================
+  // Business Settings
+  // ======================================================
+
+  displayName String?
+
+  logoUrl String?
+
+  websiteUrl String?
+
+  supportEmail String?
+
+  supportPhone String?
 
   // ======================================================
   // Localization
@@ -145,105 +192,38 @@ model Profile {
 
   timezoneId String?
 
-  // ======================================================
-  // Relationships
-  // ======================================================
-
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  accounts Account[]
-
-  addresses Address[]
-
-  userPreferences UserPreference?
+  currencyCode String?
 
   // ======================================================
-  // Audit
+  // Payments
   // ======================================================
 
-  createdAt DateTime @default(now())
+  allowWalletPayments Boolean @default(true)
 
-  updatedAt DateTime @updatedAt
+  allowQrCodePayments Boolean @default(true)
 
-  @@index([displayName])
+  allowPaymentLinks Boolean @default(true)
 
-  @@index([legalName])
-
-  @@map("profiles")
-}
-
-model Session {
+  autoSettlement Boolean @default(false)
 
   // ======================================================
-  // Identity
+  // Notifications
   // ======================================================
 
-  id String @id @default(uuid())
+  emailNotifications Boolean @default(true)
 
-  reference String @unique
+  smsNotifications Boolean @default(false)
 
-  userId String
+  pushNotifications Boolean @default(true)
 
-  // ======================================================
-  // Authentication
-  // ======================================================
-
-  refreshTokenHash String
-
-  mfaVerifiedAt DateTime?
-
-  // ======================================================
-  // Device
-  // ======================================================
-
-  deviceName String?
-
-  deviceType DeviceType @default(UNKNOWN)
-
-  operatingSystem String?
-
-  browser String?
-
-  browserVersion String?
-
-  fingerprint String?
-
-  isTrusted Boolean @default(false)
-
-  // ======================================================
-  // Network
-  // ======================================================
-
-  ipAddress String?
-
-  countryCode String?
-
-  city String?
-
-  // ======================================================
-  // Lifecycle
-  // ======================================================
-
-  status SessionStatus @default(ACTIVE)
-
-  lastActivityAt DateTime?
-
-  expiresAt DateTime
-
-  revokedAt DateTime?
-
-  revokedReason RevokedReason?
+  whatsappNotifications Boolean @default(true)
 
   // ======================================================
   // Relationships
   // ======================================================
 
-  user User @relation(
-    fields: [userId],
+  merchant Merchant @relation(
+    fields: [merchantId],
     references: [id],
     onDelete: Cascade
   )
@@ -256,15 +236,5 @@ model Session {
 
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
-
-  @@index([status])
-
-  @@index([expiresAt])
-
-  @@index([fingerprint])
-
-  @@index([lastActivityAt])
-
-  @@map("sessions")
+  @@map("merchant_settings")
 }

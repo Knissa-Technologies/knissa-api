@@ -1,0 +1,177 @@
+model Country {
+    // ======================================================
+    // Identity
+    // ======================================================
+
+    id String @id @default(uuid())
+
+    countryNumber String @unique
+
+    // ======================================================
+    // ISO
+    // ======================================================
+
+    iso2Code String @unique
+
+    iso3Code String @unique
+
+    numericCode String?
+
+    // ======================================================
+    // Information
+    // ======================================================
+
+    name String
+
+    officialName String?
+
+    flagEmoji String?
+
+    // ======================================================
+    // Phone
+    // ======================================================
+
+    phoneCode String
+
+    // ======================================================
+    // Postal
+    // ======================================================
+
+    postalCodeLabel String
+
+    postalCodePattern String?
+
+    // ======================================================
+    // Status
+    // ======================================================
+
+    isActive Boolean @default(true)
+
+    // ======================================================
+    // Audit
+    // ======================================================
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([iso2Code])
+    @@map("countries")
+}
+
+model Currency {
+    id String @id @default(uuid())
+
+    currencyNumber String @unique
+
+    code String @unique
+
+    name String
+
+    symbol String
+
+    decimals Int @default(2)
+
+    isActive Boolean @default(true)
+
+    createdAt DateTime @default(now())
+
+    updatedAt DateTime @updatedAt
+
+    @@index([code])
+    @@map("currencies")
+}
+
+model Language {
+
+  id String @id @default(uuid())
+
+  languageNumber String @unique
+
+  code String @unique
+
+  name String
+
+  nativeName String
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@map("languages")
+
+}
+
+model Timezone {
+
+  id String @id @default(uuid())
+
+  timezoneNumber String @unique
+
+  name String @unique
+
+  utcOffset String
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@map("timezones")
+
+}
+
+model CountryCurrency {
+
+  countryId String
+
+  currencyId String
+
+  isDefault Boolean @default(false)
+
+  country Country @relation(fields: [countryId], references: [id])
+
+  currency Currency @relation(fields: [currencyId], references: [id])
+
+  @@id([countryId, currencyId])
+
+  @@map("country_currencies")
+
+}
+
+model CountryLanguage {
+
+  countryId String
+
+  languageId String
+
+  isOfficial Boolean @default(true)
+
+  country Country @relation(fields: [countryId], references: [id])
+
+  language Language @relation(fields: [languageId], references: [id])
+
+  @@id([countryId, languageId])
+
+  @@map("country_languages")
+
+}
+
+model CountryTimezone {
+
+  countryId String
+
+  timezoneId String
+
+  isDefault Boolean @default(false)
+
+  country Country @relation(fields: [countryId], references: [id])
+
+  timezone Timezone @relation(fields: [timezoneId], references: [id])
+
+  @@id([countryId, timezoneId])
+
+  @@map("country_timezones")
+
+}
