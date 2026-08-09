@@ -18,7 +18,9 @@ export const env = {
   JWT_SECRET: required("JWT_SECRET"),
   REFRESH_TOKEN_SECRET: required("REFRESH_TOKEN_SECRET"),
 
-  JWT_EXPIRES_IN: required("JWT_EXPIRES_IN") as `${number}${"s" | "m" | "h" | "d"}`,
+  JWT_EXPIRES_IN: required(
+    "JWT_EXPIRES_IN",
+  ) as `${number}${"s" | "m" | "h" | "d"}`,
 
   REFRESH_TOKEN_EXPIRES_IN: required(
     "REFRESH_TOKEN_EXPIRES_IN",

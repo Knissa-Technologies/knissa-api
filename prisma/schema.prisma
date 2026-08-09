@@ -50,6 +50,11 @@ enum RevokedReason {
   TOKEN_REUSE
 }
 
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 model User {
   id                  String     @id @default(uuid())
   userNumber          String     @unique
@@ -65,13 +70,15 @@ model User {
   lastLoginAt DateTime?
   deletedAt   DateTime?
 
-  profile  Profile?
-  sessions Session[]
+  profile             Profile?
+  pendingRegistration PendingRegistration?
+  sessions            Session[]
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   passwordChangedAt    DateTime?
   biometricCredentials BiometricCredential[]
+  authTokens           AuthToken[]
 
   @@index([email])
   @@index([status])
@@ -142,6 +149,46 @@ model Session {
   @@index([fingerprint])
   @@index([lastActivityAt])
   @@map("sessions")
+}
+
+model AuthToken {
+  id     String        @id @default(uuid())
+  userId String
+  type   AuthTokenType
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([expiresAt])
+  @@map("auth_tokens")
+}
+
+model PendingRegistration {
+  id String @id @default(uuid())
+
+  userId String @unique
+
+  firstName    String
+  lastName     String
+  countryCode  String
+  phone        String
+  languageCode String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([countryCode])
+  @@map("pending_registrations")
 }
 
 // ======================================================

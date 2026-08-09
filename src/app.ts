@@ -5,6 +5,8 @@ import usersRoutes from "./modules/users/routes/users.routes.js";
 
 import { errorHandler } from "./shared/middlewares/errorHandler.js";
 
+import authRoutes from "./modules/auth/routes/auth.routes.js";
+
 const app = express();
 
 app.use(cors());
@@ -18,6 +20,8 @@ app.post("/users-test", (req, res) => {
 });
 
 app.use("/users", usersRoutes);
+app.use("/auth", authRoutes);
+
 app.use(errorHandler);
 
 app.get("/", (req, res) => {
