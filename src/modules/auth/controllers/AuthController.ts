@@ -60,6 +60,42 @@ export class AuthController {
   }
 
   // ======================================================
+  // GET ACTIVE SESSIONS
+  // ======================================================
+
+  async getSessions(req: Request, res: Response) {
+    if (!req.user?.id) {
+      throw new UnauthorizedError("User not authenticated.");
+    }
+
+    const sessions = await this.authService.getSessions(req.user.id);
+
+    return res.json(
+      ApiResponse.success(sessions, "Active sessions retrieved successfully."),
+    );
+  }
+
+  // ======================================================
+  // REVOKE SESSION
+  // ======================================================
+
+  async revokeSession(req: Request, res: Response) {
+    if (!req.user?.id) {
+      throw new UnauthorizedError("User not authenticated.");
+    }
+
+    const sessionId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    const result = await this.authService.revokeSession(req.user.id, sessionId);
+
+    return res.json(
+      ApiResponse.success(result, "Session revoked successfully."),
+    );
+  }
+
+  // ======================================================
   // VERIFY EMAIL
   // ======================================================
 

@@ -272,6 +272,62 @@ export class AuthService {
   }
 
   // ======================================================
+  // GET ACTIVE SESSIONS
+  // ======================================================
+
+  async getSessions(userId: string) {
+    const sessions = await this.sessionRepository.findActiveByUserId(userId);
+
+    return sessions.map((session) => ({
+      id: session.id,
+      reference: session.reference,
+      deviceName: session.deviceName,
+      deviceType: session.deviceType,
+      operatingSystem: session.operatingSystem,
+      browser: session.browser,
+      browserVersion: session.browserVersion,
+      fingerprint: session.fingerprint,
+      isTrusted: session.isTrusted,
+      ipAddress: session.ipAddress,
+      countryCode: session.countryCode,
+      city: session.city,
+      status: session.status,
+      lastActivityAt: session.lastActivityAt,
+      expiresAt: session.expiresAt,
+      createdAt: session.createdAt,
+    }));
+  }
+
+  // ======================================================
+  // REVOKE SESSION
+  // ======================================================
+
+  async revokeSession(userId: string, sessionId: string) {
+    const session = await this.sessionRepository.findById(sessionId);
+
+    if (!session) {
+      throw new NotFoundError("Session not found.");
+    }
+
+    if (session.userId !== userId) {
+      throw new UnauthorizedError(
+        "You are not allowed to revoke this session.",
+      );
+    }
+
+    if (session.status !== SessionStatus.ACTIVE || session.revokedAt) {
+      throw new UnauthorizedError("Session is no longer active.");
+    }
+
+    await this.sessionRepository.revoke(session.id, "USER_LOGOUT");
+
+    return {
+      sessionId: session.id,
+      status: "REVOKED",
+    };
+  }
+
+  // ======================================================
   // VERIFY EMAIL
   // ======================================================
 

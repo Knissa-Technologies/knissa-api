@@ -36,6 +36,22 @@ router.post("/logout", authMiddleware, (req, res) =>
   authController.logout(req, res),
 );
 
+// ======================================================
+// ACTIVE SESSIONS
+// ======================================================
+
+router.get("/sessions", authMiddleware, (req, res) =>
+  authController.getSessions(req, res),
+);
+
+// ======================================================
+// REVOKE SESSION
+// ======================================================
+
+router.delete("/sessions/:id", authMiddleware, (req, res) =>
+  authController.revokeSession(req, res),
+);
+
 router.post("/refresh", (req, res) => authController.refresh(req, res));
 
 export default router;
