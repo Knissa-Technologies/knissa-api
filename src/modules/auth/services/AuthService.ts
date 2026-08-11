@@ -249,6 +249,29 @@ export class AuthService {
   }
 
   // ======================================================
+  // LOGOUT
+  // ======================================================
+
+  async logout(sessionId: string) {
+    const session = await this.sessionRepository.findById(sessionId);
+
+    if (!session) {
+      throw new UnauthorizedError("Session not found.");
+    }
+
+    if (session.status !== "ACTIVE" || session.revokedAt) {
+      throw new UnauthorizedError("Session is no longer active.");
+    }
+
+    await this.sessionRepository.revoke(session.id, "USER_LOGOUT");
+
+    return {
+      sessionId: session.id,
+      status: "REVOKED",
+    };
+  }
+
+  // ======================================================
   // VERIFY EMAIL
   // ======================================================
 

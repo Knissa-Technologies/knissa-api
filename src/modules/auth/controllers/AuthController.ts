@@ -4,6 +4,8 @@ import { ApiResponse } from "../../../shared/http/ApiResponse.js";
 
 import { AuthService } from "../services/AuthService.js";
 
+import { UnauthorizedError } from "../../../shared/errors/UnauthorizedError.js";
+
 import { loginSchema } from "../validators/login.validator.js";
 import { registerSchema } from "../validators/register.validator.js";
 import { verifyEmailSchema } from "../validators/verify-email.validator.js";
@@ -41,6 +43,20 @@ export class AuthController {
     const result = await this.authService.login(data);
 
     return res.json(ApiResponse.success(result, "Login successful."));
+  }
+
+  // ======================================================
+  // LOGOUT
+  // ======================================================
+
+  async logout(req: Request, res: Response) {
+    if (!req.sessionId) {
+      throw new UnauthorizedError("Session not found.");
+    }
+
+    const result = await this.authService.logout(req.sessionId);
+
+    return res.json(ApiResponse.success(result, "Logout successful."));
   }
 
   // ======================================================

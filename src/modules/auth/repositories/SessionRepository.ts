@@ -61,6 +61,14 @@ export class SessionRepository {
     });
   }
 
+  async findById(id: string) {
+    return prisma.session.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
   async rotateRefreshToken(
     id: string,
     refreshTokenHash: string,
