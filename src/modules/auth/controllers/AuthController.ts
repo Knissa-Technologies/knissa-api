@@ -3,11 +3,18 @@ import { Request, Response } from "express";
 import { ApiResponse } from "../../../shared/http/ApiResponse.js";
 
 import { AuthService } from "../services/AuthService.js";
+
+import { loginSchema } from "../validators/login.validator.js";
 import { registerSchema } from "../validators/register.validator.js";
 import { verifyEmailSchema } from "../validators/verify-email.validator.js";
+import { refreshTokenSchema } from "../validators/refresh-token.validator.js";
 
 export class AuthController {
   private authService = new AuthService();
+
+  // ======================================================
+  // REGISTER
+  // ======================================================
 
   async register(req: Request, res: Response) {
     const data = registerSchema.parse(req.body);
@@ -24,6 +31,22 @@ export class AuthController {
       );
   }
 
+  // ======================================================
+  // LOGIN
+  // ======================================================
+
+  async login(req: Request, res: Response) {
+    const data = loginSchema.parse(req.body);
+
+    const result = await this.authService.login(data);
+
+    return res.json(ApiResponse.success(result, "Login successful."));
+  }
+
+  // ======================================================
+  // VERIFY EMAIL
+  // ======================================================
+
   async verifyEmail(req: Request, res: Response) {
     const data = verifyEmailSchema.parse(req.body);
 
@@ -31,6 +54,16 @@ export class AuthController {
 
     return res.json(
       ApiResponse.success(result, "Email verified successfully."),
+    );
+  }
+
+  async refresh(req: Request, res: Response) {
+    const data = refreshTokenSchema.parse(req.body);
+
+    const result = await this.authService.refresh(data);
+
+    return res.json(
+      ApiResponse.success(result, "Token refreshed successfully."),
     );
   }
 }

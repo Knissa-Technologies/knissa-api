@@ -1,5 +1,11 @@
 import argon2 from "argon2";
-import { AuthTokenType, AccountCategory, UserStatus } from "@prisma/client";
+import {
+  AccountCategory,
+  AuthTokenType,
+  SessionStatus,
+  UserStatus,
+} from "@prisma/client";
+import { randomUUID } from "crypto";
 
 import { prisma } from "../../../infra/database/prisma.js";
 
@@ -7,22 +13,32 @@ import { ConflictError } from "../../../shared/errors/ConflictError.js";
 import { NotFoundError } from "../../../shared/errors/NotFoundError.js";
 import { UnauthorizedError } from "../../../shared/errors/UnauthorizedError.js";
 
+import { generateAccessToken } from "../../../shared/utils/generateAccessToken.js";
 import { generateAccountNumber } from "../../../shared/utils/generateAccountNumber.js";
 import { generateAuthToken } from "../../../shared/utils/generateAuthToken.js";
 import { generateProfileNumber } from "../../../shared/utils/generateProfileNumber.js";
+import { generateRefreshToken } from "../../../shared/utils/generateRefreshToken.js";
 import { generateUserNumber } from "../../../shared/utils/generateUserNumber.js";
 import { generateWalletNumber } from "../../../shared/utils/generateWalletNumber.js";
 import { hashToken } from "../../../shared/utils/hashToken.js";
 
+import type { LoginDTO } from "../dtos/LoginDTO.js";
 import type { RegisterDTO } from "../dtos/RegisterDTO.js";
 import type { VerifyEmailDTO } from "../dtos/VerifyEmailDTO.js";
 
 import { AuthTokenRepository } from "../repositories/AuthTokenRepository.js";
+import { SessionRepository } from "../repositories/SessionRepository.js";
 import { UsersRepository } from "../../users/repositories/UsersRepository.js";
+import type { RefreshTokenDTO } from "../dtos/RefreshTokenDTO.js";
 
 export class AuthService {
   private usersRepository = new UsersRepository();
   private authTokenRepository = new AuthTokenRepository();
+  private sessionRepository = new SessionRepository();
+
+  // ======================================================
+  // REGISTER
+  // ======================================================
 
   async register(data: RegisterDTO) {
     const email = data.email.trim().toLowerCase();
@@ -81,6 +97,161 @@ export class AuthService {
     };
   }
 
+  // ======================================================
+  // LOGIN
+  // ======================================================
+
+  async login(data: LoginDTO) {
+    const email = data.email.trim().toLowerCase();
+
+    const user = await this.usersRepository.findByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedError("Invalid email or password.");
+    }
+
+    if (!user.emailVerified) {
+      throw new UnauthorizedError("Please verify your email first.");
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedError("User account is not active.");
+    }
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      throw new UnauthorizedError("Account is temporarily locked.");
+    }
+
+    const passwordValid = await argon2.verify(user.passwordHash, data.password);
+
+    if (!passwordValid) {
+      throw new UnauthorizedError("Invalid email or password.");
+    }
+
+    const sessionReference = randomUUID();
+
+    const refreshToken = generateRefreshToken();
+
+    const refreshTokenHash = hashToken(refreshToken);
+
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const session = await this.sessionRepository.create({
+      reference: sessionReference,
+      userId: user.id,
+      refreshTokenHash,
+      deviceType: "UNKNOWN",
+      isTrusted: false,
+      expiresAt,
+    });
+
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      sessionId: session.id,
+      role: user.role,
+    });
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    return {
+      user: {
+        id: user.id,
+        userNumber: user.userNumber,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      },
+
+      session: {
+        id: session.id,
+        reference: session.reference,
+        expiresAt: session.expiresAt,
+      },
+
+      tokens: {
+        accessToken,
+        refreshToken,
+      },
+    };
+  }
+
+  async refresh(data: RefreshTokenDTO) {
+    const refreshTokenHash = hashToken(data.refreshToken);
+
+    const session =
+      await this.sessionRepository.findByRefreshTokenHash(refreshTokenHash);
+
+    if (!session) {
+      throw new UnauthorizedError("Invalid refresh token.");
+    }
+
+    if (session.status !== SessionStatus.ACTIVE) {
+      throw new UnauthorizedError("Session is no longer active.");
+    }
+
+    if (session.revokedAt) {
+      throw new UnauthorizedError("Session has been revoked.");
+    }
+
+    if (session.expiresAt < new Date()) {
+      await this.sessionRepository.revoke(session.id, "TOKEN_REUSE");
+
+      throw new UnauthorizedError("Refresh token has expired.");
+    }
+
+    const user = await this.usersRepository.findById(session.userId);
+
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
+    if (user.status !== UserStatus.ACTIVE || !user.emailVerified) {
+      throw new UnauthorizedError("User account is not active.");
+    }
+
+    const newRefreshToken = generateRefreshToken();
+
+    const newRefreshTokenHash = hashToken(newRefreshToken);
+
+    const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const updatedSession = await this.sessionRepository.rotateRefreshToken(
+      session.id,
+      newRefreshTokenHash,
+      newExpiresAt,
+    );
+
+    const accessToken = generateAccessToken({
+      userId: user.id,
+      sessionId: updatedSession.id,
+      role: user.role,
+    });
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+
+      session: {
+        id: updatedSession.id,
+        reference: updatedSession.reference,
+        expiresAt: updatedSession.expiresAt,
+      },
+    };
+  }
+
+  // ======================================================
+  // VERIFY EMAIL
+  // ======================================================
+
   async verifyEmail(data: VerifyEmailDTO) {
     const tokenHash = hashToken(data.token);
 
@@ -122,10 +293,10 @@ export class AuthService {
       throw new ConflictError("Email is already verified.");
     }
 
-    /*
-     * Country and currency are resolved from the
-     * country code stored during registration.
-     */
+    // ------------------------------------------------------
+    // Country
+    // ------------------------------------------------------
+
     const country = await prisma.country.findUnique({
       where: {
         iso2Code: pendingRegistration.countryCode,
@@ -135,6 +306,10 @@ export class AuthService {
     if (!country) {
       throw new NotFoundError("Country not found.");
     }
+
+    // ------------------------------------------------------
+    // Default currency
+    // ------------------------------------------------------
 
     const countryCurrency = await prisma.countryCurrency.findFirst({
       where: {
@@ -152,6 +327,10 @@ export class AuthService {
 
     const displayName =
       `${pendingRegistration.firstName} ${pendingRegistration.lastName}`.trim();
+
+    // ------------------------------------------------------
+    // Complete onboarding transaction
+    // ------------------------------------------------------
 
     const result = await prisma.$transaction(async (tx) => {
       const updatedUser = await tx.user.update({
@@ -176,13 +355,21 @@ export class AuthService {
       const profile = await tx.profile.create({
         data: {
           profileNumber: generateProfileNumber(),
+
           userId: user.id,
+
           displayName,
+
           legalName: displayName,
+
           firstName: pendingRegistration.firstName.trim(),
-          lastName: pendingRegistration.firstName.trim(),
+
+          lastName: pendingRegistration.lastName.trim(),
+
           phoneCountryCode: country.phoneCode,
+
           phoneNumber: pendingRegistration.phone.trim(),
+
           languageCode:
             pendingRegistration.languageCode?.trim().toLowerCase() ?? null,
         },
@@ -191,13 +378,21 @@ export class AuthService {
       const account = await tx.account.create({
         data: {
           accountNumber: generateAccountNumber(),
+
           profileId: profile.id,
+
           category: AccountCategory.PERSONAL,
+
           status: "ACTIVE",
+
           displayName,
+
           legalName: displayName,
+
           countryId: country.id,
+
           baseCurrencyId: countryCurrency.currencyId,
+
           isDefault: true,
         },
       });
@@ -205,9 +400,22 @@ export class AuthService {
       const wallet = await tx.wallet.create({
         data: {
           walletNumber: generateWalletNumber(),
+
           accountId: account.id,
+
           currencyId: countryCurrency.currencyId,
+
           isDefault: true,
+        },
+      });
+
+      // --------------------------------------------------
+      // Registration completed
+      // --------------------------------------------------
+
+      await tx.pendingRegistration.delete({
+        where: {
+          userId: user.id,
         },
       });
 
@@ -227,17 +435,20 @@ export class AuthService {
         status: result.user.status,
         emailVerified: result.user.emailVerified,
       },
+
       profile: {
         id: result.profile.id,
         profileNumber: result.profile.profileNumber,
         displayName: result.profile.displayName,
       },
+
       account: {
         id: result.account.id,
         accountNumber: result.account.accountNumber,
         category: result.account.category,
         status: result.account.status,
       },
+
       wallet: {
         id: result.wallet.id,
         walletNumber: result.wallet.walletNumber,
