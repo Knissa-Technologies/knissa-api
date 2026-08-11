@@ -4,6 +4,23 @@ import { prisma } from "../../../infra/database/prisma.js";
 
 import type { CreateUserDTO } from "../dtos/CreateUserDTO.js";
 
+const publicUserSelect = {
+  id: true,
+  userNumber: true,
+  email: true,
+  role: true,
+  status: true,
+  emailVerified: true,
+  phoneVerified: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
+  lastLoginAt: true,
+  deletedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  passwordChangedAt: true,
+} as const;
+
 export class UsersRepository {
   async create(data: CreateUserDTO) {
     return prisma.user.create({
@@ -16,6 +33,7 @@ export class UsersRepository {
       where: {
         deletedAt: null,
       },
+      select: publicUserSelect,
       orderBy: {
         createdAt: "desc",
       },
@@ -28,6 +46,7 @@ export class UsersRepository {
         id,
         deletedAt: null,
       },
+      select: publicUserSelect,
     });
   }
 
@@ -52,6 +71,7 @@ export class UsersRepository {
         id,
       },
       data,
+      select: publicUserSelect,
     });
   }
 
@@ -63,6 +83,7 @@ export class UsersRepository {
       data: {
         deletedAt: new Date(),
       },
+      select: publicUserSelect,
     });
   }
 }
