@@ -116,26 +116,27 @@ model Profile {
 }
 
 model Session {
-  id               String         @id @default(uuid())
-  reference        String         @unique
-  userId           String
-  refreshTokenHash String
-  mfaVerifiedAt    DateTime?
-  deviceName       String?
-  deviceType       DeviceType     @default(UNKNOWN)
-  operatingSystem  String?
-  browser          String?
-  browserVersion   String?
-  fingerprint      String?
-  isTrusted        Boolean        @default(false)
-  ipAddress        String?
-  countryCode      String?
-  city             String?
-  status           SessionStatus  @default(ACTIVE)
-  lastActivityAt   DateTime?
-  expiresAt        DateTime
-  revokedAt        DateTime?
-  revokedReason    RevokedReason?
+  id                       String         @id @default(uuid())
+  reference                String         @unique
+  userId                   String
+  refreshTokenHash         String
+  previousRefreshTokenHash String?
+  mfaVerifiedAt            DateTime?
+  deviceName               String?
+  deviceType               DeviceType     @default(UNKNOWN)
+  operatingSystem          String?
+  browser                  String?
+  browserVersion           String?
+  fingerprint              String?
+  isTrusted                Boolean        @default(false)
+  ipAddress                String?
+  countryCode              String?
+  city                     String?
+  status                   SessionStatus  @default(ACTIVE)
+  lastActivityAt           DateTime?
+  expiresAt                DateTime
+  revokedAt                DateTime?
+  revokedReason            RevokedReason?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -229,6 +229,22 @@ export class AuthService {
       throw new UnauthorizedError("Session has been revoked.");
     }
 
+    if (session.previousRefreshTokenHash === refreshTokenHash) {
+      await this.sessionRepository.revoke(session.id, "TOKEN_REUSE");
+
+      throw new UnauthorizedError(
+        "Refresh token reuse detected. Session has been revoked.",
+      );
+    }
+
+    if (session.status !== SessionStatus.ACTIVE) {
+      throw new UnauthorizedError("Session is no longer active.");
+    }
+
+    if (session.revokedAt) {
+      throw new UnauthorizedError("Session has been revoked.");
+    }
+
     if (session.expiresAt < new Date()) {
       await this.sessionRepository.revoke(session.id, "TOKEN_REUSE");
 
@@ -253,6 +269,7 @@ export class AuthService {
 
     const updatedSession = await this.sessionRepository.rotateRefreshToken(
       session.id,
+      refreshTokenHash,
       newRefreshTokenHash,
       newExpiresAt,
     );

@@ -71,7 +71,8 @@ export class SessionRepository {
 
   async rotateRefreshToken(
     id: string,
-    refreshTokenHash: string,
+    currentRefreshTokenHash: string,
+    newRefreshTokenHash: string,
     expiresAt: Date,
   ) {
     return prisma.session.update({
@@ -79,7 +80,8 @@ export class SessionRepository {
         id,
       },
       data: {
-        refreshTokenHash,
+        previousRefreshTokenHash: currentRefreshTokenHash,
+        refreshTokenHash: newRefreshTokenHash,
         expiresAt,
         status: SessionStatus.ACTIVE,
         revokedAt: null,
@@ -147,7 +149,14 @@ export class SessionRepository {
   async findByRefreshTokenHash(refreshTokenHash: string) {
     return prisma.session.findFirst({
       where: {
-        refreshTokenHash,
+        OR: [
+          {
+            refreshTokenHash,
+          },
+          {
+            previousRefreshTokenHash: refreshTokenHash,
+          },
+        ],
       },
     });
   }
