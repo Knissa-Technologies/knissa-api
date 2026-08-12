@@ -118,13 +118,45 @@ export class AuthService {
       throw new UnauthorizedError("User account is not active.");
     }
 
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
+    const now = new Date();
+
+    if (user.lockedUntil && user.lockedUntil > now) {
       throw new UnauthorizedError("Account is temporarily locked.");
+    }
+
+    /*
+     * If the previous lock has expired, reset the login attempts.
+     */
+    if (user.lockedUntil && user.lockedUntil <= now) {
+      await this.usersRepository.update(user.id, {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      });
+
+      user.failedLoginAttempts = 0;
+      user.lockedUntil = null;
     }
 
     const passwordValid = await argon2.verify(user.passwordHash, data.password);
 
     if (!passwordValid) {
+      const failedAttempts = user.failedLoginAttempts + 1;
+
+      if (failedAttempts >= 5) {
+        const lockedUntil = new Date(now.getTime() + 15 * 60 * 1000);
+
+        await this.usersRepository.update(user.id, {
+          failedLoginAttempts: failedAttempts,
+          lockedUntil,
+        });
+
+        throw new UnauthorizedError("Account is temporarily locked.");
+      }
+
+      await this.usersRepository.update(user.id, {
+        failedLoginAttempts: failedAttempts,
+      });
+
       throw new UnauthorizedError("Invalid email or password.");
     }
 
@@ -151,15 +183,10 @@ export class AuthService {
       role: user.role,
     });
 
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAt: new Date(),
-      },
+    await this.usersRepository.update(user.id, {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
     });
 
     return {

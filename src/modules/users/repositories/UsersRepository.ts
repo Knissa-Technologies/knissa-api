@@ -64,6 +64,9 @@ export class UsersRepository {
       email: string;
       passwordHash: string;
       status: UserStatus;
+      failedLoginAttempts: number;
+      lockedUntil: Date | null;
+      lastLoginAt: Date | null;
     }>,
   ) {
     return prisma.user.update({
