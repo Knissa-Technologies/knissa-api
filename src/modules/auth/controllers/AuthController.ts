@@ -95,6 +95,26 @@ export class AuthController {
     );
   }
 
+  async changePassword(req: Request, res: Response) {
+    if (!req.user) {
+      throw new UnauthorizedError("User authentication is required.");
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    const result = await this.authService.changePassword(
+      req.user.id,
+      currentPassword,
+      newPassword,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+      data: result,
+    });
+  }
+
   // ======================================================
   // VERIFY EMAIL
   // ======================================================

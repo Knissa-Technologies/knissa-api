@@ -283,46 +283,30 @@ export class AuthService {
     const session = await this.sessionRepository.findById(sessionId);
 
     if (!session) {
-      throw new UnauthorizedError("Session not found.");
+      throw new NotFoundError("Session not found.");
     }
 
-    if (session.status !== "ACTIVE" || session.revokedAt) {
+    if (session.status !== SessionStatus.ACTIVE) {
       throw new UnauthorizedError("Session is no longer active.");
     }
 
-    await this.sessionRepository.revoke(session.id, "USER_LOGOUT");
+    const revokedSession = await this.sessionRepository.revoke(
+      session.id,
+      "USER_LOGOUT",
+    );
 
     return {
-      sessionId: session.id,
-      status: "REVOKED",
+      sessionId: revokedSession.id,
+      status: revokedSession.status,
     };
   }
 
   // ======================================================
-  // GET ACTIVE SESSIONS
+  // GET SESSIONS
   // ======================================================
 
   async getSessions(userId: string) {
-    const sessions = await this.sessionRepository.findActiveByUserId(userId);
-
-    return sessions.map((session) => ({
-      id: session.id,
-      reference: session.reference,
-      deviceName: session.deviceName,
-      deviceType: session.deviceType,
-      operatingSystem: session.operatingSystem,
-      browser: session.browser,
-      browserVersion: session.browserVersion,
-      fingerprint: session.fingerprint,
-      isTrusted: session.isTrusted,
-      ipAddress: session.ipAddress,
-      countryCode: session.countryCode,
-      city: session.city,
-      status: session.status,
-      lastActivityAt: session.lastActivityAt,
-      expiresAt: session.expiresAt,
-      createdAt: session.createdAt,
-    }));
+    return this.sessionRepository.findActiveByUserId(userId);
   }
 
   // ======================================================
@@ -337,20 +321,64 @@ export class AuthService {
     }
 
     if (session.userId !== userId) {
-      throw new UnauthorizedError(
-        "You are not allowed to revoke this session.",
-      );
+      throw new UnauthorizedError("You cannot revoke this session.");
     }
 
-    if (session.status !== SessionStatus.ACTIVE || session.revokedAt) {
+    if (session.status !== SessionStatus.ACTIVE) {
       throw new UnauthorizedError("Session is no longer active.");
     }
 
-    await this.sessionRepository.revoke(session.id, "USER_LOGOUT");
+    const revokedSession = await this.sessionRepository.revoke(
+      session.id,
+      "USER_LOGOUT",
+    );
 
     return {
-      sessionId: session.id,
-      status: "REVOKED",
+      sessionId: revokedSession.id,
+      status: revokedSession.status,
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.usersRepository.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new UnauthorizedError("User not found.");
+    }
+
+    const currentPasswordValid = await argon2.verify(
+      user.passwordHash,
+      currentPassword,
+    );
+
+    if (!currentPasswordValid) {
+      throw new UnauthorizedError("Current password is incorrect.");
+    }
+
+    if (currentPassword === newPassword) {
+      throw new UnauthorizedError(
+        "New password must be different from the current password.",
+      );
+    }
+
+    const newPasswordHash = await argon2.hash(newPassword);
+
+    const now = new Date();
+
+    await this.usersRepository.update(user.id, {
+      passwordHash: newPasswordHash,
+      passwordChangedAt: now,
+    });
+
+    await this.sessionRepository.revokeAllByUserId(user.id, "PASSWORD_CHANGED");
+
+    return {
+      passwordChangedAt: now,
+      sessionsRevoked: true,
     };
   }
 

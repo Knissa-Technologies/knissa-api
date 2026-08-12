@@ -52,6 +52,10 @@ router.delete("/sessions/:id", authMiddleware, (req, res) =>
   authController.revokeSession(req, res),
 );
 
+router.patch("/password", authMiddleware, (req, res) =>
+  authController.changePassword(req, res),
+);
+
 router.post("/refresh", (req, res) => authController.refresh(req, res));
 
 export default router;

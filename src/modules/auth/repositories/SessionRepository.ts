@@ -110,6 +110,29 @@ export class SessionRepository {
     });
   }
 
+  async revokeAllByUserId(
+    userId: string,
+    reason:
+      | "USER_LOGOUT"
+      | "PASSWORD_CHANGED"
+      | "ADMIN_REVOKED"
+      | "SUSPICIOUS_ACTIVITY"
+      | "TOKEN_REUSE",
+  ) {
+    return prisma.session.updateMany({
+      where: {
+        userId,
+        status: SessionStatus.ACTIVE,
+        revokedAt: null,
+      },
+      data: {
+        status: SessionStatus.REVOKED,
+        revokedAt: new Date(),
+        revokedReason: reason,
+      },
+    });
+  }
+
   async updateLastActivity(id: string) {
     return prisma.session.update({
       where: {

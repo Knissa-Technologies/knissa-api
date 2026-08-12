@@ -67,6 +67,7 @@ export class UsersRepository {
       failedLoginAttempts: number;
       lockedUntil: Date | null;
       lastLoginAt: Date | null;
+      passwordChangedAt: Date | null;
     }>,
   ) {
     return prisma.user.update({
@@ -75,6 +76,15 @@ export class UsersRepository {
       },
       data,
       select: publicUserSelect,
+    });
+  }
+
+  async findByIdWithPassword(id: string) {
+    return prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
   }
 
