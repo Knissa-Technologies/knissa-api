@@ -1,13 +1,17 @@
 import { Router } from "express";
 
+import { UserRole } from "@prisma/client";
+
 import { UsersController } from "../controllers/UsersController.js";
 import { authMiddleware } from "../../../shared/middlewares/authMiddleware.js";
+import { requireRole } from "../../../shared/middlewares/requireRole.js";
 
 const router = Router();
 
 const usersController = new UsersController();
 
 router.use(authMiddleware);
+router.use(requireRole(UserRole.ADMIN, UserRole.SUPPORT));
 
 router.get("/", (req, res) => usersController.findAll(req, res));
 
