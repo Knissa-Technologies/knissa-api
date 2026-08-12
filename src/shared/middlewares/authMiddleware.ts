@@ -7,6 +7,7 @@ import { UserRole } from "@prisma/client";
 import { SessionRepository } from "../../modules/auth/repositories/SessionRepository.js";
 
 import { UnauthorizedError } from "../errors/UnauthorizedError.js";
+import type { ParamsDictionary } from "express-serve-static-core";
 
 interface AccessTokenPayload {
   sub: string;
@@ -28,11 +29,9 @@ function getJwtSecret(): string {
 
 const sessionRepository = new SessionRepository();
 
-export async function authMiddleware(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+export async function authMiddleware<
+  P extends ParamsDictionary = ParamsDictionary,
+>(req: Request<P>, _res: Response, next: NextFunction) {
   const authorization = req.headers.authorization;
 
   if (!authorization) {
