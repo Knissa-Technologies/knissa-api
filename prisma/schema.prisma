@@ -53,6 +53,7 @@ enum RevokedReason {
 enum AuthTokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+  MFA_LOGIN
 }
 
 model User {
@@ -73,6 +74,7 @@ model User {
   profile             Profile?
   pendingRegistration PendingRegistration?
   sessions            Session[]
+  mfaCredential       MfaCredential?
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -113,6 +115,22 @@ model Profile {
   @@index([displayName])
   @@index([legalName])
   @@map("profiles")
+}
+
+model MfaCredential {
+  id         String    @id @default(uuid())
+  userId     String    @unique
+  secret     String
+  enabled    Boolean   @default(false)
+  verifiedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled])
+  @@map("mfa_credentials")
 }
 
 model Session {

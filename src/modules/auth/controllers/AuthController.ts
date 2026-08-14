@@ -10,9 +10,14 @@ import { loginSchema } from "../validators/login.validator.js";
 import { registerSchema } from "../validators/register.validator.js";
 import { verifyEmailSchema } from "../validators/verify-email.validator.js";
 import { refreshTokenSchema } from "../validators/refresh-token.validator.js";
+import { MfaService } from "../services/MfaService.js";
+import { mfaVerifySchema } from "../validators/mfa-verify.validator.js";
+
+import { mfaVerifyLoginSchema } from "../validators/mfa-verify-login.validator.js";
 
 export class AuthController {
   private authService = new AuthService();
+  private mfaService = new MfaService();
 
   // ======================================================
   // REGISTER
@@ -113,6 +118,58 @@ export class AuthController {
       message: "Password changed successfully.",
       data: result,
     });
+  }
+
+  // ======================================================
+  // MFA ENROLLMENT
+  // ======================================================
+
+  async enrollMfa(req: Request, res: Response) {
+    if (!req.user?.id) {
+      throw new UnauthorizedError("User not authenticated.");
+    }
+
+    const result = await this.mfaService.enroll(req.user.id);
+
+    return res.json(
+      ApiResponse.success(result, "MFA enrollment initialized successfully."),
+    );
+  }
+
+  // ======================================================
+  // MFA VERIFY
+  // ======================================================
+
+  async verifyMfa(req: Request, res: Response) {
+    if (!req.user?.id) {
+      throw new UnauthorizedError("User not authenticated.");
+    }
+
+    const data = mfaVerifySchema.parse(req.body);
+
+    const result = await this.mfaService.verifyCode(req.user.id, data.code);
+
+    return res.json(ApiResponse.success(result, "MFA enabled successfully."));
+  }
+
+  // ======================================================
+  // MFA LOGIN VERIFY
+  // ======================================================
+
+  async verifyMfaLogin(req: Request, res: Response) {
+    const data = mfaVerifyLoginSchema.parse(req.body);
+
+    const result = await this.authService.verifyMfaLogin(
+      data.challengeToken,
+      data.code,
+    );
+
+    return res.json(
+      ApiResponse.success(
+        result,
+        "MFA verification successful. Login completed.",
+      ),
+    );
   }
 
   // ======================================================

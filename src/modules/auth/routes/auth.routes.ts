@@ -45,6 +45,30 @@ router.get("/sessions", authMiddleware, (req, res) =>
 );
 
 // ======================================================
+// MFA ENROLLMENT
+// ======================================================
+
+router.post("/mfa/enroll", authMiddleware, (req, res) =>
+  authController.enrollMfa(req, res),
+);
+
+// ======================================================
+// MFA VERIFY
+// ======================================================
+
+router.post("/mfa/verify", authMiddleware, (req, res) =>
+  authController.verifyMfa(req, res),
+);
+
+// ======================================================
+// MFA LOGIN VERIFY
+// ======================================================
+
+router.post("/mfa/verify-login", (req, res) =>
+  authController.verifyMfaLogin(req, res),
+);
+
+// ======================================================
 // REVOKE SESSION
 // ======================================================
 

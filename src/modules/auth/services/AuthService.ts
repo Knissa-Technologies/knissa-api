@@ -1,10 +1,12 @@
 import argon2 from "argon2";
+
 import {
   AccountCategory,
   AuthTokenType,
   SessionStatus,
   UserStatus,
 } from "@prisma/client";
+
 import { randomUUID } from "crypto";
 
 import { prisma } from "../../../infra/database/prisma.js";
@@ -25,16 +27,19 @@ import { hashToken } from "../../../shared/utils/hashToken.js";
 import type { LoginDTO } from "../dtos/LoginDTO.js";
 import type { RegisterDTO } from "../dtos/RegisterDTO.js";
 import type { VerifyEmailDTO } from "../dtos/VerifyEmailDTO.js";
+import type { RefreshTokenDTO } from "../dtos/RefreshTokenDTO.js";
 
 import { AuthTokenRepository } from "../repositories/AuthTokenRepository.js";
 import { SessionRepository } from "../repositories/SessionRepository.js";
 import { UsersRepository } from "../../users/repositories/UsersRepository.js";
-import type { RefreshTokenDTO } from "../dtos/RefreshTokenDTO.js";
+
+import { MfaService } from "./MfaService.js";
 
 export class AuthService {
   private usersRepository = new UsersRepository();
   private authTokenRepository = new AuthTokenRepository();
   private sessionRepository = new SessionRepository();
+  private mfaService = new MfaService();
 
   // ======================================================
   // REGISTER
@@ -160,6 +165,143 @@ export class AuthService {
       throw new UnauthorizedError("Invalid email or password.");
     }
 
+    // ======================================================
+    // MFA CHECK
+    // ======================================================
+
+    const mfaCredential = await prisma.mfaCredential.findUnique({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    if (mfaCredential?.enabled) {
+      const challengeToken = generateAuthToken();
+
+      const challengeHash = hashToken(challengeToken);
+
+      const challengeExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+      await this.authTokenRepository.create({
+        userId: user.id,
+        type: AuthTokenType.MFA_LOGIN,
+        tokenHash: challengeHash,
+        expiresAt: challengeExpiresAt,
+      });
+
+      return {
+        mfaRequired: true,
+        challengeToken,
+        expiresAt: challengeExpiresAt,
+      };
+    }
+
+    // ======================================================
+    // NORMAL LOGIN WITHOUT MFA
+    // ======================================================
+
+    return this.createAuthenticatedSession(user.id, user.role);
+  }
+
+  // ======================================================
+  // MFA LOGIN
+  // ======================================================
+
+  async verifyMfaLogin(challengeToken: string, code: string) {
+    const tokenHash = hashToken(challengeToken);
+
+    const authToken = await this.authTokenRepository.findByTokenHash(tokenHash);
+
+    if (!authToken) {
+      throw new UnauthorizedError("Invalid MFA challenge.");
+    }
+
+    if (authToken.type !== AuthTokenType.MFA_LOGIN) {
+      throw new UnauthorizedError("Invalid MFA challenge.");
+    }
+
+    if (authToken.usedAt) {
+      throw new UnauthorizedError("MFA challenge has already been used.");
+    }
+
+    if (authToken.expiresAt < new Date()) {
+      throw new UnauthorizedError("MFA challenge has expired.");
+    }
+
+    const user = await this.usersRepository.findByEmail(
+      (
+        await prisma.user.findUnique({
+          where: {
+            id: authToken.userId,
+          },
+          select: {
+            email: true,
+          },
+        })
+      )?.email ?? "",
+    );
+
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedError("User account is not active.");
+    }
+
+    if (!user.emailVerified) {
+      throw new UnauthorizedError("Please verify your email first.");
+    }
+
+    // ======================================================
+    // VERIFY TOTP
+    // ======================================================
+
+    await this.mfaService.verifyLoginCode(user.id, code);
+
+    // ======================================================
+    // CONSUME MFA CHALLENGE
+    // ======================================================
+
+    await this.authTokenRepository.markAsUsed(authToken.id);
+
+    // ======================================================
+    // COMPLETE LOGIN
+    // ======================================================
+
+    const result = await this.createAuthenticatedSession(user.id, user.role);
+
+    await this.usersRepository.update(user.id, {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
+    });
+
+    return result;
+  }
+
+  // ======================================================
+  // CREATE AUTHENTICATED SESSION
+  // ======================================================
+
+  private async createAuthenticatedSession(userId: string, role: string) {
+    const user = await this.usersRepository.findByEmail(
+      (
+        await prisma.user.findUnique({
+          where: {
+            id: userId,
+          },
+          select: {
+            email: true,
+          },
+        })
+      )?.email ?? "",
+    );
+
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
     const sessionReference = randomUUID();
 
     const refreshToken = generateRefreshToken();
@@ -170,7 +312,7 @@ export class AuthService {
 
     const session = await this.sessionRepository.create({
       reference: sessionReference,
-      userId: user.id,
+      userId,
       refreshTokenHash,
       deviceType: "UNKNOWN",
       isTrusted: false,
@@ -178,12 +320,12 @@ export class AuthService {
     });
 
     const accessToken = generateAccessToken({
-      userId: user.id,
+      userId,
       sessionId: session.id,
-      role: user.role,
+      role,
     });
 
-    await this.usersRepository.update(user.id, {
+    await this.usersRepository.update(userId, {
       failedLoginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: new Date(),
@@ -210,6 +352,10 @@ export class AuthService {
       },
     };
   }
+
+  // ======================================================
+  // REFRESH TOKEN
+  // ======================================================
 
   async refresh(data: RefreshTokenDTO) {
     const refreshTokenHash = hashToken(data.refreshToken);
@@ -355,6 +501,10 @@ export class AuthService {
       status: revokedSession.status,
     };
   }
+
+  // ======================================================
+  // CHANGE PASSWORD
+  // ======================================================
 
   async changePassword(
     userId: string,
