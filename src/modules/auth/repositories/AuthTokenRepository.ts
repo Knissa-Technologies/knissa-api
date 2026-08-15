@@ -32,4 +32,19 @@ export class AuthTokenRepository {
       },
     });
   }
+
+  async consumeMfaChallenge(id: string) {
+    const result = await prisma.authToken.updateMany({
+      where: {
+        id,
+        type: "MFA_LOGIN",
+        usedAt: null,
+      },
+      data: {
+        usedAt: new Date(),
+      },
+    });
+
+    return result.count === 1;
+  }
 }
