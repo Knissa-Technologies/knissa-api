@@ -8,6 +8,7 @@ import { errorHandler } from "./shared/middlewares/errorHandler.js";
 import authRoutes from "./modules/auth/routes/auth.routes.js";
 
 import profilesRoutes from "./modules/profiles/routes/profiles.routes.js";
+import accountsRoutes from "./modules/accounts/routes/accounts.routes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.post("/users-test", (req, res) => {
 app.use("/users", usersRoutes);
 app.use("/auth", authRoutes);
 app.use("/profiles", profilesRoutes);
+app.use("/accounts", accountsRoutes);
 
 app.use(errorHandler);
 
