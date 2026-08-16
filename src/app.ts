@@ -9,6 +9,7 @@ import authRoutes from "./modules/auth/routes/auth.routes.js";
 
 import profilesRoutes from "./modules/profiles/routes/profiles.routes.js";
 import accountsRoutes from "./modules/accounts/routes/accounts.routes.js";
+import walletsRoutes from "./modules/wallets/routes/wallets.routes.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/users", usersRoutes);
 app.use("/auth", authRoutes);
 app.use("/profiles", profilesRoutes);
 app.use("/accounts", accountsRoutes);
+app.use("/wallets", walletsRoutes);
 
 app.use(errorHandler);
 
