@@ -12,6 +12,7 @@ import accountsRoutes from "./modules/accounts/routes/accounts.routes.js";
 import walletsRoutes from "./modules/wallets/routes/wallets.routes.js";
 import transactionsRoutes from "./modules/transactions/routes/transactions.routes.js";
 import recipientsRoutes from "./modules/recipients/routes/recipients.routes.js";
+import paymentsRoutes from "./modules/payments/routes/payments.routes.js";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/accounts", accountsRoutes);
 app.use("/wallets", walletsRoutes);
 app.use("/transactions", transactionsRoutes);
 app.use("/recipients", recipientsRoutes);
+app.use("/payments", paymentsRoutes);
 
 app.use(errorHandler);
 
