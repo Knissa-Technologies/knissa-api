@@ -1,4 +1,8 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "../../../infra/database/prisma.js";
+
+import { BadRequestError } from "../../../shared/errors/BadRequestError.js";
 
 const transactionSelect = {
   id: true,
@@ -124,6 +128,21 @@ export class TransactionsRepository {
     });
   }
 
+  // ======================================================
+  // HANDLE PRISMA ERRORS
+  // ======================================================
+
+  private handlePrismaError(error: unknown): never {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new BadRequestError("Idempotency key has already been used.");
+    }
+
+    throw error;
+  }
+
   async transfer(data: {
     transactionNumber: string;
     sourceWalletId: string;
@@ -135,133 +154,136 @@ export class TransactionsRepository {
     sourceLedgerNumber: string;
     destinationLedgerNumber: string;
   }) {
-    return prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.create({
-        data: {
-          transactionNumber: data.transactionNumber,
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.create({
+          data: {
+            transactionNumber: data.transactionNumber,
 
-          sourceWalletId: data.sourceWalletId,
+            sourceWalletId: data.sourceWalletId,
 
-          destinationWalletId: data.destinationWalletId,
+            destinationWalletId: data.destinationWalletId,
 
-          currencyId: data.currencyId,
+            currencyId: data.currencyId,
 
-          type: "TRANSFER",
+            type: "TRANSFER",
 
-          status: "PROCESSING",
+            status: "PROCESSING",
 
-          amount: data.amount,
+            amount: data.amount,
 
-          feeAmount: "0",
+            feeAmount: "0",
 
-          netAmount: data.amount,
+            netAmount: data.amount,
 
-          description: data.description,
+            description: data.description,
 
-          idempotencyKey: data.idempotencyKey,
-        },
-      });
-
-      const sourceUpdated = await tx.wallet.updateMany({
-        where: {
-          id: data.sourceWalletId,
-          status: "ACTIVE",
-          availableBalance: {
-            gte: data.amount,
+            idempotencyKey: data.idempotencyKey,
           },
-        },
-        data: {
-          availableBalance: {
-            decrement: data.amount,
+        });
+
+        const sourceUpdated = await tx.wallet.updateMany({
+          where: {
+            id: data.sourceWalletId,
+            status: "ACTIVE",
+            availableBalance: {
+              gte: data.amount,
+            },
           },
-          totalBalance: {
-            decrement: data.amount,
+          data: {
+            availableBalance: {
+              decrement: data.amount,
+            },
+            totalBalance: {
+              decrement: data.amount,
+            },
           },
-        },
-      });
+        });
 
-      if (sourceUpdated.count !== 1) {
-        throw new Error("INSUFFICIENT_BALANCE");
-      }
+        if (sourceUpdated.count !== 1) {
+          throw new BadRequestError("Insufficient wallet balance.");
+        }
 
-      await tx.wallet.update({
-        where: {
-          id: data.destinationWalletId,
-        },
-        data: {
-          availableBalance: {
-            increment: data.amount,
+        await tx.wallet.update({
+          where: {
+            id: data.destinationWalletId,
           },
-          totalBalance: {
-            increment: data.amount,
+          data: {
+            availableBalance: {
+              increment: data.amount,
+            },
+            totalBalance: {
+              increment: data.amount,
+            },
           },
-        },
+        });
+
+        const sourceWallet = await tx.wallet.findUniqueOrThrow({
+          where: {
+            id: data.sourceWalletId,
+          },
+        });
+
+        const destinationWallet = await tx.wallet.findUniqueOrThrow({
+          where: {
+            id: data.destinationWalletId,
+          },
+        });
+
+        await tx.ledgerEntry.create({
+          data: {
+            entryNumber: data.sourceLedgerNumber,
+
+            walletId: data.sourceWalletId,
+
+            transactionId: transaction.id,
+
+            currencyId: data.currencyId,
+
+            entryType: "DEBIT",
+
+            amount: data.amount,
+
+            balanceAfter: sourceWallet.totalBalance,
+
+            description: data.description ?? "Transfer sent.",
+          },
+        });
+
+        await tx.ledgerEntry.create({
+          data: {
+            entryNumber: data.destinationLedgerNumber,
+
+            walletId: data.destinationWalletId,
+
+            transactionId: transaction.id,
+
+            currencyId: data.currencyId,
+
+            entryType: "CREDIT",
+
+            amount: data.amount,
+
+            balanceAfter: destinationWallet.totalBalance,
+
+            description: data.description ?? "Transfer received.",
+          },
+        });
+
+        return tx.transaction.update({
+          where: {
+            id: transaction.id,
+          },
+          data: {
+            status: "COMPLETED",
+            completedAt: new Date(),
+          },
+          select: transactionSelect,
+        });
       });
-
-
-      const sourceWallet = await tx.wallet.findUniqueOrThrow({
-        where: {
-          id: data.sourceWalletId,
-        },
-      });
-
-      const destinationWallet = await tx.wallet.findUniqueOrThrow({
-        where: {
-          id: data.destinationWalletId,
-        },
-      });
-
-      await tx.ledgerEntry.create({
-        data: {
-          entryNumber: data.sourceLedgerNumber,
-
-          walletId: data.sourceWalletId,
-
-          transactionId: transaction.id,
-
-          currencyId: data.currencyId,
-
-          entryType: "DEBIT",
-
-          amount: data.amount,
-
-          balanceAfter: sourceWallet.totalBalance,
-
-          description: data.description ?? "Transfer sent.",
-        },
-      });
-
-      await tx.ledgerEntry.create({
-        data: {
-          entryNumber: data.destinationLedgerNumber,
-
-          walletId: data.destinationWalletId,
-
-          transactionId: transaction.id,
-
-          currencyId: data.currencyId,
-
-          entryType: "CREDIT",
-
-          amount: data.amount,
-
-          balanceAfter: destinationWallet.totalBalance,
-
-          description: data.description ?? "Transfer received.",
-        },
-      });
-
-      return tx.transaction.update({
-        where: {
-          id: transaction.id,
-        },
-        data: {
-          status: "COMPLETED",
-          completedAt: new Date(),
-        },
-        select: transactionSelect,
-      });
-    });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
   async deposit(data: {
@@ -273,81 +295,86 @@ export class TransactionsRepository {
     idempotencyKey: string;
     ledgerNumber: string;
   }) {
-    return prisma.$transaction(async (tx) => {
-      const transaction = await tx.transaction.create({
-        data: {
-          transactionNumber: data.transactionNumber,
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.create({
+          data: {
+            transactionNumber: data.transactionNumber,
 
-          destinationWalletId: data.destinationWalletId,
+            destinationWalletId: data.destinationWalletId,
 
-          currencyId: data.currencyId,
+            currencyId: data.currencyId,
 
-          type: "DEPOSIT",
+            type: "DEPOSIT",
 
-          status: "PROCESSING",
+            status: "PROCESSING",
 
-          amount: data.amount,
+            amount: data.amount,
 
-          feeAmount: "0",
+            feeAmount: "0",
 
-          netAmount: data.amount,
+            netAmount: data.amount,
 
-          description: data.description,
+            description: data.description,
 
-          idempotencyKey: data.idempotencyKey,
-        },
-      });
-
-      await tx.wallet.update({
-        where: {
-          id: data.destinationWalletId,
-        },
-        data: {
-          availableBalance: {
-            increment: data.amount,
+            idempotencyKey: data.idempotencyKey,
           },
-          totalBalance: {
-            increment: data.amount,
+        });
+
+        await tx.wallet.update({
+          where: {
+            id: data.destinationWalletId,
           },
-        },
+          data: {
+            availableBalance: {
+              increment: data.amount,
+            },
+
+            totalBalance: {
+              increment: data.amount,
+            },
+          },
+        });
+
+        const wallet = await tx.wallet.findUniqueOrThrow({
+          where: {
+            id: data.destinationWalletId,
+          },
+        });
+
+        await tx.ledgerEntry.create({
+          data: {
+            entryNumber: data.ledgerNumber,
+
+            walletId: data.destinationWalletId,
+
+            transactionId: transaction.id,
+
+            currencyId: data.currencyId,
+
+            entryType: "CREDIT",
+
+            amount: data.amount,
+
+            balanceAfter: wallet.totalBalance,
+
+            description: data.description ?? "Deposit received.",
+          },
+        });
+
+        return tx.transaction.update({
+          where: {
+            id: transaction.id,
+          },
+          data: {
+            status: "COMPLETED",
+            completedAt: new Date(),
+          },
+          select: transactionSelect,
+        });
       });
-
-      const wallet = await tx.wallet.findUniqueOrThrow({
-        where: {
-          id: data.destinationWalletId,
-        },
-      });
-
-      await tx.ledgerEntry.create({
-        data: {
-          entryNumber: data.ledgerNumber,
-
-          walletId: data.destinationWalletId,
-
-          transactionId: transaction.id,
-
-          currencyId: data.currencyId,
-
-          entryType: "CREDIT",
-
-          amount: data.amount,
-
-          balanceAfter: wallet.totalBalance,
-
-          description: data.description ?? "Deposit received.",
-        },
-      });
-
-      return tx.transaction.update({
-        where: {
-          id: transaction.id,
-        },
-        data: {
-          status: "COMPLETED",
-          completedAt: new Date(),
-        },
-        select: transactionSelect,
-      });
-    });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 }
