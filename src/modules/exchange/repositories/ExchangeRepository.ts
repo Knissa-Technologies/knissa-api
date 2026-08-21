@@ -1,5 +1,7 @@
 import { prisma } from "../../../infra/database/prisma.js";
 
+import { BadRequestError } from "../../../shared/errors/BadRequestError.js";
+
 export class ExchangeRepository {
   // ======================================================
   // ACCOUNT
@@ -53,56 +55,56 @@ export class ExchangeRepository {
     });
   }
 
-// ======================================================
-// FIND ACTIVE EXCHANGE RATE
-// ======================================================
+  // ======================================================
+  // FIND ACTIVE EXCHANGE RATE
+  // ======================================================
 
-async findActiveExchangeRate(
-  baseCurrencyId: string,
-  quoteCurrencyId: string,
-) {
-  const now = new Date();
+  async findActiveExchangeRate(
+    baseCurrencyId: string,
+    quoteCurrencyId: string,
+  ) {
+    const now = new Date();
 
-  return prisma.exchangeRate.findFirst({
-    where: {
-      baseCurrencyId,
-      quoteCurrencyId,
+    return prisma.exchangeRate.findFirst({
+      where: {
+        baseCurrencyId,
+        quoteCurrencyId,
 
-      validFrom: {
-        lte: now,
+        validFrom: {
+          lte: now,
+        },
+
+        OR: [
+          {
+            validUntil: null,
+          },
+          {
+            validUntil: {
+              gt: now,
+            },
+          },
+        ],
       },
 
-      OR: [
-        {
-          validUntil: null,
-        },
-        {
-          validUntil: {
-            gt: now,
-          },
-        },
-      ],
-    },
+      orderBy: {
+        validFrom: "desc",
+      },
 
-    orderBy: {
-      validFrom: "desc",
-    },
+      select: {
+        id: true,
+        rateNumber: true,
 
-    select: {
-      id: true,
-      rateNumber: true,
+        baseCurrencyId: true,
+        quoteCurrencyId: true,
 
-      baseCurrencyId: true,
-      quoteCurrencyId: true,
+        rate: true,
+        provider: true,
 
-      rate: true,
-      provider: true,
-
-      validFrom: true,
-      validUntil: true,
-    },
-  });
-}
+        validFrom: true,
+        validUntil: true,
+      },
+    });
+  }
 
   // ======================================================
   // CREATE EXCHANGE QUOTE
@@ -244,7 +246,9 @@ async findActiveExchangeRate(
       });
 
       if (quoteUpdated.count !== 1) {
-        throw new Error("QUOTE_NOT_ACTIVE");
+        throw new BadRequestError(
+          "Exchange quote is no longer active or has expired.",
+        );
       }
 
       // ==================================================
