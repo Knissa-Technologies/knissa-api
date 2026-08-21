@@ -787,6 +787,10 @@ export class ExchangeRepository {
         createdAt: true,
         updatedAt: true,
 
+        // ================================================
+        // SOURCE WALLET
+        // ================================================
+
         sourceWallet: {
           select: {
             walletNumber: true,
@@ -799,6 +803,10 @@ export class ExchangeRepository {
           },
         },
 
+        // ================================================
+        // DESTINATION WALLET
+        // ================================================
+
         destinationWallet: {
           select: {
             walletNumber: true,
@@ -808,6 +816,30 @@ export class ExchangeRepository {
                 code: true,
               },
             },
+          },
+        },
+
+        // ================================================
+        // EXCHANGE RATE
+        // ================================================
+
+        exchangeRate: {
+          select: {
+            rateNumber: true,
+            rate: true,
+            provider: true,
+          },
+        },
+
+        // ================================================
+        // TRANSACTION
+        // ================================================
+
+        transaction: {
+          select: {
+            transactionNumber: true,
+            status: true,
+            completedAt: true,
           },
         },
       },
