@@ -59,10 +59,7 @@ export class WalletsRepository {
     });
   }
 
-  async findByIdAndAccountIds(
-    id: string,
-    accountIds: string[],
-  ) {
+  async findByIdAndAccountIds(id: string, accountIds: string[]) {
     return prisma.wallet.findFirst({
       where: {
         id,
@@ -70,6 +67,84 @@ export class WalletsRepository {
           in: accountIds,
         },
       },
+      select: walletSelect,
+    });
+  }
+
+  // ======================================================
+  // ACCOUNT
+  // ======================================================
+
+  async findAccountById(accountId: string) {
+    return prisma.account.findUnique({
+      where: {
+        id: accountId,
+      },
+      select: {
+        id: true,
+        profileId: true,
+        status: true,
+      },
+    });
+  }
+
+  // ======================================================
+  // CURRENCY
+  // ======================================================
+
+  async findCurrencyById(currencyId: string) {
+    return prisma.currency.findUnique({
+      where: {
+        id: currencyId,
+      },
+      select: {
+        id: true,
+        code: true,
+        isActive: true,
+      },
+    });
+  }
+
+  // ======================================================
+  // FIND WALLET BY ACCOUNT AND CURRENCY
+  // ======================================================
+
+  async findByAccountAndCurrency(accountId: string, currencyId: string) {
+    return prisma.wallet.findUnique({
+      where: {
+        accountId_currencyId: {
+          accountId,
+          currencyId,
+        },
+      },
+      select: walletSelect,
+    });
+  }
+
+  // ======================================================
+  // CREATE WALLET
+  // ======================================================
+
+  async create(data: {
+    walletNumber: string;
+    accountId: string;
+    currencyId: string;
+    isDefault?: boolean;
+  }) {
+    return prisma.wallet.create({
+      data: {
+        walletNumber: data.walletNumber,
+        accountId: data.accountId,
+        currencyId: data.currencyId,
+
+        status: "ACTIVE",
+        isDefault: data.isDefault ?? false,
+
+        availableBalance: "0",
+        reservedBalance: "0",
+        totalBalance: "0",
+      },
+
       select: walletSelect,
     });
   }

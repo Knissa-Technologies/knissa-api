@@ -361,6 +361,8 @@ model Currency {
   updatedAt        DateTime           @updatedAt
   merchantSettings MerchantSettings[]
 
+  paymentLinks PaymentLink[]
+
   @@index([code])
   @@map("currencies")
 }
@@ -829,6 +831,13 @@ enum PaymentType {
   DONATION
 }
 
+enum PaymentLinkStatus {
+  ACTIVE
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
 model Payment {
   id                String        @id @default(uuid())
   paymentNumber     String        @unique
@@ -849,7 +858,12 @@ model Payment {
   account     Account     @relation(fields: [accountId], references: [id])
   transaction Transaction @relation(fields: [transactionId], references: [id])
   merchant    Merchant?   @relation(fields: [merchantId], references: [id])
-  invoices    Invoice[]
+
+  paymentLinkId String?
+
+  paymentLink PaymentLink? @relation(fields: [paymentLinkId], references: [id])
+
+  invoices Invoice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -860,6 +874,41 @@ model Payment {
   @@index([status])
   @@index([type])
   @@map("payments")
+}
+
+model PaymentLink {
+  id                String @id @default(uuid())
+  paymentLinkNumber String @unique
+
+  merchantId String
+  currencyId String
+
+  amount Decimal @db.Decimal(20, 8)
+
+  description       String?
+  externalReference String?
+
+  status PaymentLinkStatus @default(ACTIVE)
+
+  expiresAt DateTime?
+
+  maxUses   Int?
+  usedCount Int  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  currency Currency @relation(fields: [currencyId], references: [id])
+
+  payments Payment[]
+
+  @@index([merchantId])
+  @@index([currencyId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@map("payment_links")
 }
 
 enum InvoiceStatus {
@@ -1155,6 +1204,8 @@ model Merchant {
 
   settings MerchantSettings?
   payments Payment[]
+
+  paymentLinks PaymentLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

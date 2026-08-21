@@ -13,6 +13,9 @@ import walletsRoutes from "./modules/wallets/routes/wallets.routes.js";
 import transactionsRoutes from "./modules/transactions/routes/transactions.routes.js";
 import recipientsRoutes from "./modules/recipients/routes/recipients.routes.js";
 import paymentsRoutes from "./modules/payments/routes/payments.routes.js";
+import paymentLinksRoutes from "./modules/payment-links/routes/payment-links.routes.js";
+import exchangeRoutes from "./modules/exchange/routes/exchange.routes.js";
+import { exchangeRatesRoutes } from "./modules/exchange-rates/routes/exchange-rates.routes.js";
 
 const app = express();
 
@@ -34,6 +37,9 @@ app.use("/wallets", walletsRoutes);
 app.use("/transactions", transactionsRoutes);
 app.use("/recipients", recipientsRoutes);
 app.use("/payments", paymentsRoutes);
+app.use("/payment-links", paymentLinksRoutes);
+app.use("/exchange", exchangeRoutes);
+app.use("/exchange-rates", exchangeRatesRoutes);
 
 app.use(errorHandler);
 
