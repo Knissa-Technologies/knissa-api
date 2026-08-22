@@ -7,15 +7,19 @@ import type { IdParams } from "../../../shared/http/RouteParams.js";
 
 import type { CreateDepositDTO } from "../dtos/CreateDepositDTO.js";
 import type { CreateTransferDTO } from "../dtos/CreateTransferDTO.js";
+import type { FindTransactionsQueryDTO } from "../dtos/FindTransactionsQueryDTO.js";
 
 import { TransactionsService } from "../services/TransactionsService.js";
 
 export class TransactionsController {
-  private transactionsService =
-    new TransactionsService();
+  private transactionsService = new TransactionsService();
+
+  // ======================================================
+  // FIND ALL TRANSACTIONS
+  // ======================================================
 
   async findAll(
-    req: Request,
+    req: Request<{}, {}, {}, FindTransactionsQueryDTO>,
     res: Response,
   ) {
     if (!req.user) {
@@ -24,15 +28,20 @@ export class TransactionsController {
       );
     }
 
-    const transactions =
+    const result =
       await this.transactionsService.findAll(
         req.user.id,
+        req.query,
       );
 
     return res.json(
-      ApiResponse.success(transactions),
+      ApiResponse.success(result),
     );
   }
+
+  // ======================================================
+  // FIND TRANSACTION BY ID
+  // ======================================================
 
   async findById(
     req: Request<IdParams>,
@@ -55,6 +64,10 @@ export class TransactionsController {
     );
   }
 
+  // ======================================================
+  // TRANSFER
+  // ======================================================
+
   async transfer(
     req: Request,
     res: Response,
@@ -71,13 +84,19 @@ export class TransactionsController {
         req.body as CreateTransferDTO,
       );
 
-    return res.status(201).json(
-      ApiResponse.success(
-        transaction,
-        "Transfer completed successfully.",
-      ),
-    );
+    return res
+      .status(201)
+      .json(
+        ApiResponse.success(
+          transaction,
+          "Transfer completed successfully.",
+        ),
+      );
   }
+
+  // ======================================================
+  // TEST DEPOSIT
+  // ======================================================
 
   async deposit(
     req: Request,
@@ -95,11 +114,13 @@ export class TransactionsController {
         req.body as CreateDepositDTO,
       );
 
-    return res.status(201).json(
-      ApiResponse.success(
-        transaction,
-        "Test deposit completed successfully.",
-      ),
-    );
+    return res
+      .status(201)
+      .json(
+        ApiResponse.success(
+          transaction,
+          "Test deposit completed successfully.",
+        ),
+      );
   }
 }

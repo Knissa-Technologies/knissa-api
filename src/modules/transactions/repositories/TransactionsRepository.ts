@@ -67,27 +67,62 @@ export class TransactionsRepository {
     });
   }
 
-  async findAllByWalletIds(walletIds: string[]) {
-    return prisma.transaction.findMany({
-      where: {
-        OR: [
-          {
-            sourceWalletId: {
-              in: walletIds,
-            },
+  async findAllByWalletIds(
+    walletIds: string[],
+    options: {
+      skip: number;
+      take: number;
+      type?: string;
+      status?: string;
+    },
+  ) {
+    const where = {
+      OR: [
+        {
+          sourceWalletId: {
+            in: walletIds,
           },
-          {
-            destinationWalletId: {
-              in: walletIds,
-            },
+        },
+        {
+          destinationWalletId: {
+            in: walletIds,
           },
-        ],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: transactionSelect,
-    });
+        },
+      ],
+
+      ...(options.type && {
+        type: options.type as never,
+      }),
+
+      ...(options.status && {
+        status: options.status as never,
+      }),
+    };
+
+    const [transactions, total] = await prisma.$transaction([
+      prisma.transaction.findMany({
+        where,
+
+        skip: options.skip,
+
+        take: options.take,
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        select: transactionSelect,
+      }),
+
+      prisma.transaction.count({
+        where,
+      }),
+    ]);
+
+    return {
+      transactions,
+      total,
+    };
   }
 
   async findByIdAndWalletIds(id: string, walletIds: string[]) {

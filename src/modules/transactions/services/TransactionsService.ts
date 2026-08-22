@@ -10,6 +10,8 @@ import { generateTransactionNumber } from "../../../shared/utils/generateTransac
 import type { CreateDepositDTO } from "../dtos/CreateDepositDTO.js";
 import type { CreateTransferDTO } from "../dtos/CreateTransferDTO.js";
 
+import type { FindTransactionsQueryDTO } from "../dtos/FindTransactionsQueryDTO.js";
+
 import { TransactionsRepository } from "../repositories/TransactionsRepository.js";
 
 export class TransactionsService {
@@ -17,15 +19,6 @@ export class TransactionsService {
 
   /**
    * Normalizes monetary values to 8 decimal places.
-   *
-   * Examples:
-   * 25
-   * 25.0
-   * 25.00
-   * 25.00000000
-   *
-   * All become:
-   * 25.00000000
    */
   private normalizeAmount(value: string | Prisma.Decimal) {
     return new Prisma.Decimal(value).toFixed(8);
@@ -51,50 +44,78 @@ export class TransactionsService {
       return [];
     }
 
-    const accountIds = accounts.map(
-      (account) => account.id,
-    );
+    const accountIds = accounts.map((account) => account.id);
 
     const wallets =
-      await this.transactionsRepository.findWalletsByAccountIds(
-        accountIds,
-      );
+      await this.transactionsRepository.findWalletsByAccountIds(accountIds);
 
-    return wallets.map(
-      (wallet) => wallet.id,
-    );
+    return wallets.map((wallet) => wallet.id);
   }
 
   /**
    * List transactions belonging to the authenticated user's wallets.
+   * Supports pagination and filters.
    */
-  async findAll(userId: string) {
-    const walletIds =
-      await this.getWalletIds(userId);
+  async findAll(userId: string, query: FindTransactionsQueryDTO) {
+    const walletIds = await this.getWalletIds(userId);
+
+    const page = Math.max(Number(query.page) || 1, 1);
+
+    const limit = Math.min(
+      Math.max(Number(query.limit) || 10, 1),
+      100,
+    );
 
     if (walletIds.length === 0) {
-      return [];
+      return {
+        transactions: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
     }
 
-    return this.transactionsRepository.findAllByWalletIds(
-      walletIds,
-    );
+    const skip = (page - 1) * limit;
+
+    const result =
+      await this.transactionsRepository.findAllByWalletIds(
+        walletIds,
+        {
+          skip,
+          take: limit,
+          type: query.type,
+          status: query.status,
+        },
+      );
+
+    const totalPages = Math.ceil(result.total / limit);
+
+    return {
+      transactions: result.transactions,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
   /**
    * Find a transaction belonging to the authenticated user's wallets.
    */
-  async findById(
-    userId: string,
-    transactionId: string,
-  ) {
-    const walletIds =
-      await this.getWalletIds(userId);
+  async findById(userId: string, transactionId: string) {
+    const walletIds = await this.getWalletIds(userId);
 
     if (walletIds.length === 0) {
-      throw new NotFoundError(
-        "Transaction not found.",
-      );
+      throw new NotFoundError("Transaction not found.");
     }
 
     const transaction =
@@ -104,9 +125,7 @@ export class TransactionsService {
       );
 
     if (!transaction) {
-      throw new NotFoundError(
-        "Transaction not found.",
-      );
+      throw new NotFoundError("Transaction not found.");
     }
 
     return transaction;
@@ -116,56 +135,36 @@ export class TransactionsService {
    * Transfer funds from the authenticated user's wallet
    * to another active wallet.
    */
-  async transfer(
-    userId: string,
-    data: CreateTransferDTO,
-  ) {
-    const walletIds =
-      await this.getWalletIds(userId);
+  async transfer(userId: string, data: CreateTransferDTO) {
+    const walletIds = await this.getWalletIds(userId);
 
     if (walletIds.length === 0) {
-      throw new NotFoundError(
-        "Wallet not found.",
-      );
+      throw new NotFoundError("Wallet not found.");
     }
 
     // ------------------------------------------------------
     // Basic validation
     // ------------------------------------------------------
 
-    if (
-      data.sourceWalletId ===
-      data.destinationWalletId
-    ) {
+    if (data.sourceWalletId === data.destinationWalletId) {
       throw new BadRequestError(
         "Source and destination wallets must be different.",
       );
     }
 
     if (!data.idempotencyKey?.trim()) {
-      throw new BadRequestError(
-        "Idempotency key is required.",
-      );
+      throw new BadRequestError("Idempotency key is required.");
     }
 
-    if (
-      !/^\d+(\.\d{1,8})?$/.test(
-        data.amount,
-      )
-    ) {
+    if (!/^\d+(\.\d{1,8})?$/.test(data.amount)) {
       throw new BadRequestError(
         "Transfer amount must have up to 8 decimal places.",
       );
     }
 
-    const amount = Number(
-      data.amount,
-    );
+    const amount = Number(data.amount);
 
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestError(
         "Transfer amount must be greater than zero.",
       );
@@ -175,22 +174,15 @@ export class TransactionsService {
     // Source wallet ownership
     // ------------------------------------------------------
 
-    if (
-      !walletIds.includes(
-        data.sourceWalletId,
-      )
-    ) {
-      throw new NotFoundError(
-        "Source wallet not found.",
-      );
+    if (!walletIds.includes(data.sourceWalletId)) {
+      throw new NotFoundError("Source wallet not found.");
     }
 
     // ------------------------------------------------------
     // Idempotency
     // ------------------------------------------------------
 
-    const idempotencyKey =
-      data.idempotencyKey.trim();
+    const idempotencyKey = data.idempotencyKey.trim();
 
     const existingTransaction =
       await this.transactionsRepository.findByIdempotencyKey(
@@ -199,18 +191,12 @@ export class TransactionsService {
 
     if (existingTransaction) {
       const sameTransaction =
-        existingTransaction.type ===
-          "TRANSFER" &&
-        existingTransaction.sourceWalletId ===
-          data.sourceWalletId &&
+        existingTransaction.type === "TRANSFER" &&
+        existingTransaction.sourceWalletId === data.sourceWalletId &&
         existingTransaction.destinationWalletId ===
           data.destinationWalletId &&
-        this.normalizeAmount(
-          existingTransaction.amount,
-        ) ===
-          this.normalizeAmount(
-            data.amount,
-          );
+        this.normalizeAmount(existingTransaction.amount) ===
+          this.normalizeAmount(data.amount);
 
       if (!sameTransaction) {
         throw new ConflictError(
@@ -218,9 +204,6 @@ export class TransactionsService {
         );
       }
 
-      // Same idempotency key + same operation.
-      // Return the original transaction without
-      // moving the money again.
       return existingTransaction;
     }
 
@@ -234,9 +217,7 @@ export class TransactionsService {
       );
 
     if (!sourceWallet) {
-      throw new NotFoundError(
-        "Source wallet not found.",
-      );
+      throw new NotFoundError("Source wallet not found.");
     }
 
     // ------------------------------------------------------
@@ -249,9 +230,7 @@ export class TransactionsService {
       );
 
     if (!destinationWallet) {
-      throw new NotFoundError(
-        "Destination wallet not found.",
-      );
+      throw new NotFoundError("Destination wallet not found.");
     }
 
     // ------------------------------------------------------
@@ -259,24 +238,17 @@ export class TransactionsService {
     // ------------------------------------------------------
 
     if (
-      sourceWallet.status !==
-        "ACTIVE" ||
-      destinationWallet.status !==
-        "ACTIVE"
+      sourceWallet.status !== "ACTIVE" ||
+      destinationWallet.status !== "ACTIVE"
     ) {
-      throw new BadRequestError(
-        "Both wallets must be active.",
-      );
+      throw new BadRequestError("Both wallets must be active.");
     }
 
     // ------------------------------------------------------
     // Currency
     // ------------------------------------------------------
 
-    if (
-      sourceWallet.currencyId !==
-      destinationWallet.currencyId
-    ) {
+    if (sourceWallet.currencyId !== destinationWallet.currencyId) {
       throw new BadRequestError(
         "Source and destination wallets must use the same currency.",
       );
@@ -286,13 +258,8 @@ export class TransactionsService {
     // Balance
     // ------------------------------------------------------
 
-    if (
-      sourceWallet.availableBalance.toNumber() <
-      amount
-    ) {
-      throw new BadRequestError(
-        "Insufficient wallet balance.",
-      );
+    if (sourceWallet.availableBalance.toNumber() < amount) {
+      throw new BadRequestError("Insufficient wallet balance.");
     }
 
     // ------------------------------------------------------
@@ -300,32 +267,23 @@ export class TransactionsService {
     // ------------------------------------------------------
 
     return this.transactionsRepository.transfer({
-      transactionNumber:
-        generateTransactionNumber(),
+      transactionNumber: generateTransactionNumber(),
 
-      sourceWalletId:
-        data.sourceWalletId,
+      sourceWalletId: data.sourceWalletId,
 
-      destinationWalletId:
-        data.destinationWalletId,
+      destinationWalletId: data.destinationWalletId,
 
-      currencyId:
-        sourceWallet.currencyId,
+      currencyId: sourceWallet.currencyId,
 
-      amount:
-        data.amount,
+      amount: data.amount,
 
-      description:
-        data.description?.trim() ||
-        undefined,
+      description: data.description?.trim() || undefined,
 
       idempotencyKey,
 
-      sourceLedgerNumber:
-        generateLedgerEntryNumber(),
+      sourceLedgerNumber: generateLedgerEntryNumber(),
 
-      destinationLedgerNumber:
-        generateLedgerEntryNumber(),
+      destinationLedgerNumber: generateLedgerEntryNumber(),
     });
   }
 
@@ -334,18 +292,12 @@ export class TransactionsService {
    *
    * This operation is disabled in production.
    */
-  async deposit(
-    _adminUserId: string,
-    data: CreateDepositDTO,
-  ) {
+  async deposit(_adminUserId: string, data: CreateDepositDTO) {
     // ------------------------------------------------------
     // Environment protection
     // ------------------------------------------------------
 
-    if (
-      process.env.NODE_ENV ===
-      "production"
-    ) {
+    if (process.env.NODE_ENV === "production") {
       throw new BadRequestError(
         "Test deposits are disabled in production.",
       );
@@ -356,44 +308,28 @@ export class TransactionsService {
     // ------------------------------------------------------
 
     if (!data.idempotencyKey?.trim()) {
-      throw new BadRequestError(
-        "Idempotency key is required.",
-      );
+      throw new BadRequestError("Idempotency key is required.");
     }
 
-    if (
-      !data.destinationWalletId?.trim()
-    ) {
-      throw new BadRequestError(
-        "Destination wallet is required.",
-      );
+    if (!data.destinationWalletId?.trim()) {
+      throw new BadRequestError("Destination wallet is required.");
     }
 
-    if (
-      !/^\d+(\.\d{1,8})?$/.test(
-        data.amount,
-      )
-    ) {
+    if (!/^\d+(\.\d{1,8})?$/.test(data.amount)) {
       throw new BadRequestError(
         "Deposit amount must have up to 8 decimal places.",
       );
     }
 
-    const amount = Number(
-      data.amount,
-    );
+    const amount = Number(data.amount);
 
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestError(
         "Deposit amount must be greater than zero.",
       );
     }
 
-    const idempotencyKey =
-      data.idempotencyKey.trim();
+    const idempotencyKey = data.idempotencyKey.trim();
 
     // ------------------------------------------------------
     // Idempotency
@@ -406,16 +342,11 @@ export class TransactionsService {
 
     if (existingTransaction) {
       const sameDeposit =
-        existingTransaction.type ===
-          "DEPOSIT" &&
+        existingTransaction.type === "DEPOSIT" &&
         existingTransaction.destinationWalletId ===
           data.destinationWalletId &&
-        this.normalizeAmount(
-          existingTransaction.amount,
-        ) ===
-          this.normalizeAmount(
-            data.amount,
-          );
+        this.normalizeAmount(existingTransaction.amount) ===
+          this.normalizeAmount(data.amount);
 
       if (!sameDeposit) {
         throw new ConflictError(
@@ -423,9 +354,6 @@ export class TransactionsService {
         );
       }
 
-      // Same idempotency key + same operation.
-      // Return the original transaction without
-      // creating money again.
       return existingTransaction;
     }
 
@@ -439,9 +367,7 @@ export class TransactionsService {
       );
 
     if (!wallet) {
-      throw new NotFoundError(
-        "Destination wallet not found.",
-      );
+      throw new NotFoundError("Destination wallet not found.");
     }
 
     // ------------------------------------------------------
@@ -459,26 +385,19 @@ export class TransactionsService {
     // ------------------------------------------------------
 
     return this.transactionsRepository.deposit({
-      transactionNumber:
-        generateTransactionNumber(),
+      transactionNumber: generateTransactionNumber(),
 
-      destinationWalletId:
-        data.destinationWalletId,
+      destinationWalletId: data.destinationWalletId,
 
-      currencyId:
-        wallet.currencyId,
+      currencyId: wallet.currencyId,
 
-      amount:
-        data.amount,
+      amount: data.amount,
 
-      description:
-        data.description?.trim() ||
-        undefined,
+      description: data.description?.trim() || undefined,
 
       idempotencyKey,
 
-      ledgerNumber:
-        generateLedgerEntryNumber(),
+      ledgerNumber: generateLedgerEntryNumber(),
     });
   }
 }
