@@ -142,10 +142,7 @@ export class AuthService {
       user.lockedUntil = null;
     }
 
-    const passwordValid = await argon2.verify(
-      user.passwordHash,
-      data.password,
-    );
+    const passwordValid = await argon2.verify(user.passwordHash, data.password);
 
     if (!passwordValid) {
       const failedAttempts = user.failedLoginAttempts + 1;
@@ -213,8 +210,7 @@ export class AuthService {
   async verifyMfaLogin(challengeToken: string, code: string) {
     const tokenHash = hashToken(challengeToken);
 
-    const authToken =
-      await this.authTokenRepository.findByTokenHash(tokenHash);
+    const authToken = await this.authTokenRepository.findByTokenHash(tokenHash);
 
     if (!authToken) {
       throw new UnauthorizedError("Invalid MFA challenge.");
@@ -278,10 +274,7 @@ export class AuthService {
     // COMPLETE LOGIN
     // ======================================================
 
-    const result = await this.createAuthenticatedSession(
-      user.id,
-      user.role,
-    );
+    const result = await this.createAuthenticatedSession(user.id, user.role);
 
     await this.usersRepository.update(user.id, {
       failedLoginAttempts: 0,
@@ -296,10 +289,7 @@ export class AuthService {
   // CREATE AUTHENTICATED SESSION
   // ======================================================
 
-  private async createAuthenticatedSession(
-    userId: string,
-    role: string,
-  ) {
+  private async createAuthenticatedSession(userId: string, role: string) {
     const user = await this.usersRepository.findByEmail(
       (
         await prisma.user.findUnique({
@@ -323,9 +313,7 @@ export class AuthService {
 
     const refreshTokenHash = hashToken(refreshToken);
 
-    const expiresAt = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const session = await this.sessionRepository.create({
       reference: sessionReference,
@@ -378,9 +366,7 @@ export class AuthService {
     const refreshTokenHash = hashToken(data.refreshToken);
 
     const session =
-      await this.sessionRepository.findByRefreshTokenHash(
-        refreshTokenHash,
-      );
+      await this.sessionRepository.findByRefreshTokenHash(refreshTokenHash);
 
     if (!session) {
       throw new UnauthorizedError("Invalid refresh token.");
@@ -411,10 +397,7 @@ export class AuthService {
     }
 
     if (session.expiresAt < new Date()) {
-      await this.sessionRepository.revoke(
-        session.id,
-        "TOKEN_REUSE",
-      );
+      await this.sessionRepository.revoke(session.id, "TOKEN_REUSE");
 
       throw new UnauthorizedError("Refresh token has expired.");
     }
@@ -433,17 +416,14 @@ export class AuthService {
 
     const newRefreshTokenHash = hashToken(newRefreshToken);
 
-    const newExpiresAt = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000,
-    );
+    const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    const updatedSession =
-      await this.sessionRepository.rotateRefreshToken(
-        session.id,
-        refreshTokenHash,
-        newRefreshTokenHash,
-        newExpiresAt,
-      );
+    const updatedSession = await this.sessionRepository.rotateRefreshToken(
+      session.id,
+      refreshTokenHash,
+      newRefreshTokenHash,
+      newExpiresAt,
+    );
 
     const accessToken = generateAccessToken({
       userId: user.id,
@@ -509,9 +489,7 @@ export class AuthService {
     }
 
     if (session.userId !== userId) {
-      throw new UnauthorizedError(
-        "You cannot revoke this session.",
-      );
+      throw new UnauthorizedError("You cannot revoke this session.");
     }
 
     if (session.status !== SessionStatus.ACTIVE) {
@@ -538,8 +516,7 @@ export class AuthService {
     currentPassword: string,
     newPassword: string,
   ) {
-    const user =
-      await this.usersRepository.findByIdWithPassword(userId);
+    const user = await this.usersRepository.findByIdWithPassword(userId);
 
     if (!user) {
       throw new UnauthorizedError("User not found.");
@@ -551,9 +528,7 @@ export class AuthService {
     );
 
     if (!currentPasswordValid) {
-      throw new UnauthorizedError(
-        "Current password is incorrect.",
-      );
+      throw new UnauthorizedError("Current password is incorrect.");
     }
 
     if (currentPassword === newPassword) {
@@ -571,10 +546,7 @@ export class AuthService {
       passwordChangedAt: now,
     });
 
-    await this.sessionRepository.revokeAllByUserId(
-      user.id,
-      "PASSWORD_CHANGED",
-    );
+    await this.sessionRepository.revokeAllByUserId(user.id, "PASSWORD_CHANGED");
 
     return {
       passwordChangedAt: now,
@@ -589,52 +561,38 @@ export class AuthService {
   async verifyEmail(data: VerifyEmailDTO) {
     const tokenHash = hashToken(data.token);
 
-    const authToken =
-      await this.authTokenRepository.findByTokenHash(tokenHash);
+    const authToken = await this.authTokenRepository.findByTokenHash(tokenHash);
 
     if (!authToken) {
-      throw new UnauthorizedError(
-        "Invalid verification token.",
-      );
+      throw new UnauthorizedError("Invalid verification token.");
     }
 
     if (authToken.type !== AuthTokenType.EMAIL_VERIFICATION) {
-      throw new UnauthorizedError(
-        "Invalid verification token.",
-      );
+      throw new UnauthorizedError("Invalid verification token.");
     }
 
     if (authToken.usedAt) {
-      throw new UnauthorizedError(
-        "Verification token has already been used.",
-      );
+      throw new UnauthorizedError("Verification token has already been used.");
     }
 
     if (authToken.expiresAt < new Date()) {
-      throw new UnauthorizedError(
-        "Verification token has expired.",
-      );
+      throw new UnauthorizedError("Verification token has expired.");
     }
 
-    const user = await this.usersRepository.findById(
-      authToken.userId,
-    );
+    const user = await this.usersRepository.findById(authToken.userId);
 
     if (!user) {
       throw new NotFoundError("User not found.");
     }
 
-    const pendingRegistration =
-      await prisma.pendingRegistration.findUnique({
-        where: {
-          userId: user.id,
-        },
-      });
+    const pendingRegistration = await prisma.pendingRegistration.findUnique({
+      where: {
+        userId: user.id,
+      },
+    });
 
     if (!pendingRegistration) {
-      throw new NotFoundError(
-        "Pending registration not found.",
-      );
+      throw new NotFoundError("Pending registration not found.");
     }
 
     if (user.emailVerified) {
@@ -659,21 +617,18 @@ export class AuthService {
     // Default currency
     // ------------------------------------------------------
 
-    const countryCurrency =
-      await prisma.countryCurrency.findFirst({
-        where: {
-          countryId: country.id,
-          isDefault: true,
-        },
-        include: {
-          currency: true,
-        },
-      });
+    const countryCurrency = await prisma.countryCurrency.findFirst({
+      where: {
+        countryId: country.id,
+        isDefault: true,
+      },
+      include: {
+        currency: true,
+      },
+    });
 
     if (!countryCurrency) {
-      throw new NotFoundError(
-        "Default currency for country not found.",
-      );
+      throw new NotFoundError("Default currency for country not found.");
     }
 
     const displayName =
@@ -722,9 +677,7 @@ export class AuthService {
           phoneNumber: pendingRegistration.phone.trim(),
 
           languageCode:
-            pendingRegistration.languageCode
-              ?.trim()
-              .toLowerCase() ?? null,
+            pendingRegistration.languageCode?.trim().toLowerCase() ?? null,
         },
       });
 
@@ -808,6 +761,65 @@ export class AuthService {
         currencyId: result.wallet.currencyId,
         status: result.wallet.status,
       },
+    };
+  }
+
+  // ======================================================
+  // RESEND EMAIL VERIFICATION
+  // ======================================================
+
+  async resendEmailVerification(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await this.usersRepository.findByEmail(normalizedEmail);
+
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
+    if (user.emailVerified) {
+      throw new ConflictError("Email is already verified.");
+    }
+
+    const verificationToken = generateAuthToken();
+
+    const tokenHash = hashToken(verificationToken);
+
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    /*
+     * Invalidate previous unused verification tokens.
+     */
+
+    await prisma.authToken.updateMany({
+      where: {
+        userId: user.id,
+        type: AuthTokenType.EMAIL_VERIFICATION,
+        usedAt: null,
+      },
+      data: {
+        usedAt: new Date(),
+      },
+    });
+
+    /*
+     * Create new verification token.
+     */
+
+    await this.authTokenRepository.create({
+      userId: user.id,
+      type: AuthTokenType.EMAIL_VERIFICATION,
+      tokenHash,
+      expiresAt,
+    });
+
+    console.log(
+      `📧 New email verification token for ${normalizedEmail}: ${verificationToken}`,
+    );
+
+    return {
+      email: user.email,
+      expiresAt,
     };
   }
 }

@@ -16,6 +16,8 @@ import paymentsRoutes from "./modules/payments/routes/payments.routes.js";
 import paymentLinksRoutes from "./modules/payment-links/routes/payment-links.routes.js";
 import exchangeRoutes from "./modules/exchange/routes/exchange.routes.js";
 import { exchangeRatesRoutes } from "./modules/exchange-rates/routes/exchange-rates.routes.js";
+import complianceRoutes from "./modules/compliance/routes/compliance.routes.js";
+import merchantsRoutes from "./modules/merchants/routes/merchants.routes.js";
 
 const app = express();
 
@@ -40,6 +42,8 @@ app.use("/payments", paymentsRoutes);
 app.use("/payment-links", paymentLinksRoutes);
 app.use("/exchange", exchangeRoutes);
 app.use("/exchange-rates", exchangeRatesRoutes);
+app.use("/compliance", complianceRoutes);
+app.use("/merchants", merchantsRoutes);
 
 app.use(errorHandler);
 

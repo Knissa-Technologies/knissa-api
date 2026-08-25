@@ -6,6 +6,8 @@ import { AuthService } from "../services/AuthService.js";
 
 import { UnauthorizedError } from "../../../shared/errors/UnauthorizedError.js";
 
+import { resendVerificationSchema } from "../validators/resend-verification.validator.js";
+
 import { loginSchema } from "../validators/login.validator.js";
 import { registerSchema } from "../validators/register.validator.js";
 import { verifyEmailSchema } from "../validators/verify-email.validator.js";
@@ -193,6 +195,23 @@ export class AuthController {
 
     return res.json(
       ApiResponse.success(result, "Token refreshed successfully."),
+    );
+  }
+
+  // ======================================================
+  // RESEND EMAIL VERIFICATION
+  // ======================================================
+
+  async resendEmailVerification(req: Request, res: Response) {
+    const data = resendVerificationSchema.parse(req.body);
+
+    const result = await this.authService.resendEmailVerification(data.email);
+
+    return res.json(
+      ApiResponse.success(
+        result,
+        "A new verification token has been generated.",
+      ),
     );
   }
 }

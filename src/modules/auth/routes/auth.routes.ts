@@ -82,4 +82,12 @@ router.patch("/password", authMiddleware, (req, res) =>
 
 router.post("/refresh", (req, res) => authController.refresh(req, res));
 
+// ======================================================
+// RESEND EMAIL VERIFICATION
+// ======================================================
+
+router.post("/resend-verification", (req, res) =>
+  authController.resendEmailVerification(req, res),
+);
+
 export default router;
