@@ -490,4 +490,50 @@ export class MerchantsService {
       data as Prisma.MerchantSettingsUpdateInput,
     );
   }
+
+  // ======================================================
+  // TRANSFER MERCHANT OWNERSHIP
+  // ======================================================
+
+  async transferOwnership(userId: string, memberId: string) {
+    // Only the current OWNER can transfer ownership
+    const { merchant, member: currentOwner } = await this.requireOwner(userId);
+
+    // Find the new owner candidate
+    const targetMember =
+      await this.merchantsRepository.findMemberById(memberId);
+
+    if (!targetMember) {
+      throw new Error("Merchant member not found.");
+    }
+
+    // The member must belong to the same merchant
+    if (targetMember.merchantId !== merchant.id) {
+      throw new Error(
+        "You do not have permission to transfer ownership to this member.",
+      );
+    }
+
+    // Cannot transfer ownership to an inactive member
+    if (!targetMember.isActive) {
+      throw new Error(
+        "Ownership can only be transferred to an active merchant member.",
+      );
+    }
+
+    // Cannot transfer ownership to yourself
+    if (targetMember.id === currentOwner.id) {
+      throw new Error("You cannot transfer merchant ownership to yourself.");
+    }
+
+    // Safety check
+    if (targetMember.role === MerchantRole.OWNER) {
+      throw new Error("This member is already the merchant owner.");
+    }
+
+    return this.merchantsRepository.transferOwnership(
+      currentOwner.id,
+      targetMember.id,
+    );
+  }
 }

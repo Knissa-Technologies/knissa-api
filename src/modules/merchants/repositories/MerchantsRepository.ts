@@ -8,8 +8,6 @@ import {
 
 import { prisma } from "../../../infra/database/prisma.js";
 
-
-
 export class MerchantsRepository {
   // ======================================================
   // MERCHANT
@@ -203,6 +201,35 @@ export class MerchantsRepository {
       data: {
         role,
       },
+    });
+  }
+
+  // ======================================================
+  // TRANSFER OWNERSHIP
+  // ======================================================
+
+  async transferOwnership(
+    currentOwnerMemberId: string,
+    newOwnerMemberId: string,
+  ) {
+    return prisma.$transaction(async (tx) => {
+      await tx.merchantMember.update({
+        where: {
+          id: currentOwnerMemberId,
+        },
+        data: {
+          role: MerchantRole.ADMIN,
+        },
+      });
+
+      return tx.merchantMember.update({
+        where: {
+          id: newOwnerMemberId,
+        },
+        data: {
+          role: MerchantRole.OWNER,
+        },
+      });
     });
   }
 }

@@ -289,4 +289,37 @@ export class MerchantsController {
       });
     }
   }
+
+  // ======================================================
+  // TRANSFER MERCHANT OWNERSHIP
+  // ======================================================
+
+  async transferOwnership(request: Request, response: Response) {
+    try {
+      const userId = request.user!.id;
+
+      const memberId = String(request.params.memberId);
+
+      const merchant = await this.merchantsService.transferOwnership(
+        userId,
+        memberId,
+      );
+
+      return response.status(200).json({
+        success: true,
+        message: "Merchant ownership transferred successfully.",
+        data: merchant,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to transfer merchant ownership.";
+
+      return response.status(400).json({
+        success: false,
+        message,
+      });
+    }
+  }
 }

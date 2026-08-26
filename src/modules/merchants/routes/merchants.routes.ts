@@ -64,6 +64,16 @@ router.patch(
   merchantsController.activateMember.bind(merchantsController),
 );
 
+// ======================================================
+// TRANSFER MERCHANT OWNERSHIP
+// ======================================================
+
+router.patch(
+  "/members/:memberId/transfer-ownership",
+  authMiddleware,
+  merchantsController.transferOwnership.bind(merchantsController),
+);
+
 router.patch(
   "/members/:memberId/role",
   authMiddleware,
