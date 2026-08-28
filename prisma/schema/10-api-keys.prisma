@@ -1,0 +1,89 @@
+// ======================================================
+// API KEYS
+// ======================================================
+
+enum ApiKeyEnvironment {
+  TEST
+  LIVE
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+model ApiKey {
+  // ======================================================
+  // Identity
+  // ======================================================
+
+  id String @id @default(uuid())
+
+  apiKeyNumber String @unique
+
+  // ======================================================
+  // Owner
+  // ======================================================
+
+  accountId String
+
+  // ======================================================
+  // Identification
+  // ======================================================
+
+  name String
+
+  prefix String
+
+  keyHash String @unique
+
+  // ======================================================
+  // Environment
+  // ======================================================
+
+  environment ApiKeyEnvironment @default(TEST)
+
+  status ApiKeyStatus @default(ACTIVE)
+
+  // ======================================================
+  // Permissions
+  // ======================================================
+
+  scopes String[]
+
+  // ======================================================
+  // Usage
+  // ======================================================
+
+  lastUsedAt DateTime?
+
+  expiresAt DateTime?
+
+  revokedAt DateTime?
+
+  // ======================================================
+  // Relationships
+  // ======================================================
+
+  account Account @relation(
+    fields: [accountId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // ======================================================
+  // Audit
+  // ======================================================
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([status])
+  @@index([environment])
+  @@index([prefix])
+
+  @@map("api_keys")
+}
