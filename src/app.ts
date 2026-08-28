@@ -19,6 +19,7 @@ import { exchangeRatesRoutes } from "./modules/exchange-rates/routes/exchange-ra
 import complianceRoutes from "./modules/compliance/routes/compliance.routes.js";
 import merchantsRoutes from "./modules/merchants/routes/merchants.routes.js";
 import notificationsRoutes from "./modules/notifications/routes/notifications.routes.js";
+import apiKeysRoutes from "./modules/api-keys/routes/api-keys.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/exchange", exchangeRoutes);
 app.use("/exchange-rates", exchangeRatesRoutes);
 app.use("/compliance", complianceRoutes);
 app.use("/merchants", merchantsRoutes);
+app.use("/api-keys", apiKeysRoutes);
 app.use("/notifications", notificationsRoutes);
 
 app.use(errorHandler);
