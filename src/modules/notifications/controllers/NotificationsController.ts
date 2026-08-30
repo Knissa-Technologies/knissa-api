@@ -15,7 +15,19 @@ export class NotificationsController {
 
   async create(request: Request, response: Response) {
     try {
-      const notification = await this.notificationsService.create(request.body);
+      const userId = request.user?.id;
+
+      if (!userId) {
+        return response.status(401).json({
+          success: false,
+          message: "Unauthorized.",
+        });
+      }
+
+      const notification = await this.notificationsService.create(
+        userId,
+        request.body,
+      );
 
       return response.status(201).json({
         success: true,

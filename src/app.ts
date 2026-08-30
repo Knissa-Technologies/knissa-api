@@ -21,7 +21,12 @@ import merchantsRoutes from "./modules/merchants/routes/merchants.routes.js";
 import notificationsRoutes from "./modules/notifications/routes/notifications.routes.js";
 import apiKeysRoutes from "./modules/api-keys/routes/api-keys.routes.js";
 
+
+import swaggerUi from "swagger-ui-express";
+import { swaggerDocument } from "./docs/swagger.js";
+
 const app = express();
+
 
 app.use(cors());
 app.use(express.json());
@@ -58,5 +63,18 @@ app.get("/", (req, res) => {
     status: "running",
   });
 });
+
+// ======================================================
+// API DOCUMENTATION
+// ======================================================
+
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    explorer: true,
+    customSiteTitle: "Knissa API Documentation",
+  }),
+);
 
 export { app };

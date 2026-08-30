@@ -5,6 +5,9 @@ import { ExchangeRatesService } from "../services/ExchangeRatesService.js";
 import type { CreateExchangeRateDTO } from "../dtos/CreateExchangeRateDTO.js";
 import type { UpdateExchangeRateDTO } from "../dtos/UpdateExchangeRateDTO.js";
 
+import { createExchangeRateSchema } from "../validators/create-exchange-rate.validator.js";
+import { updateExchangeRateSchema } from "../validators/update-exchange-rate.validator.js";
+
 import type { IdParams } from "../../../shared/http/RouteParams.js";
 
 export class ExchangeRatesController {
@@ -15,8 +18,7 @@ export class ExchangeRatesController {
   // ======================================================
 
   async findAll(req: Request, res: Response) {
-    const exchangeRates =
-      await this.exchangeRatesService.findAll();
+    const exchangeRates = await this.exchangeRatesService.findAll();
 
     return res.status(200).json({
       success: true,
@@ -28,14 +30,10 @@ export class ExchangeRatesController {
   // FIND EXCHANGE RATE BY ID
   // ======================================================
 
-  async findById(
-    req: Request<IdParams>,
-    res: Response,
-  ) {
+  async findById(req: Request<IdParams>, res: Response) {
     const { id } = req.params;
 
-    const exchangeRate =
-      await this.exchangeRatesService.findById(id);
+    const exchangeRate = await this.exchangeRatesService.findById(id);
 
     return res.status(200).json({
       success: true,
@@ -47,12 +45,10 @@ export class ExchangeRatesController {
   // CREATE EXCHANGE RATE
   // ======================================================
 
-  async create(
-    req: Request<{}, {}, CreateExchangeRateDTO>,
-    res: Response,
-  ) {
-    const exchangeRate =
-      await this.exchangeRatesService.create(req.body);
+  async create(req: Request<{}, {}, CreateExchangeRateDTO>, res: Response) {
+    const data = createExchangeRateSchema.parse(req.body);
+
+    const exchangeRate = await this.exchangeRatesService.create(data);
 
     return res.status(201).json({
       success: true,
@@ -71,11 +67,9 @@ export class ExchangeRatesController {
   ) {
     const { id } = req.params;
 
-    const exchangeRate =
-      await this.exchangeRatesService.update(
-        id,
-        req.body,
-      );
+    const data = updateExchangeRateSchema.parse(req.body);
+
+    const exchangeRate = await this.exchangeRatesService.update(id, data);
 
     return res.status(200).json({
       success: true,
@@ -88,14 +82,10 @@ export class ExchangeRatesController {
   // EXPIRE EXCHANGE RATE
   // ======================================================
 
-  async expire(
-    req: Request<IdParams>,
-    res: Response,
-  ) {
+  async expire(req: Request<IdParams>, res: Response) {
     const { id } = req.params;
 
-    const exchangeRate =
-      await this.exchangeRatesService.expire(id);
+    const exchangeRate = await this.exchangeRatesService.expire(id);
 
     return res.status(200).json({
       success: true,

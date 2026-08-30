@@ -3,19 +3,21 @@ openapi: 3.1.1
 info:
   title: Knissa API
   version: 1.0.0
-
   description: |
     REST API for the Knissa Financial Platform.
 
-    Knissa provides secure financial services including:
-
-    - Authentication
-    - Wallet Management
+    Knissa provides secure financial infrastructure for:
+    - Digital accounts
+    - Multi-currency wallets
+    - Transactions
     - Payments
-    - Currency Exchange
-    - Multi-Currency Wallets
-    - Merchant Accounts
-    - Future Open Finance Integrations
+    - Currency exchange
+    - Merchant services
+    - Notifications
+    - API key management
+
+    This OpenAPI specification describes the currently implemented
+    backend API contract.
 
   contact:
     name: Knissa Engineering
@@ -27,7 +29,7 @@ info:
 
 servers:
   - url: http://localhost:3000
-    description: Development
+    description: Local Development
 
   - url: https://staging-api.knissa.com
     description: Staging
@@ -35,85 +37,85 @@ servers:
   - url: https://api.knissa.com
     description: Production
 
-security:
-  - BearerAuth: []
-
 tags:
   - name: Authentication
-    description: User registration and authentication
+    description: Registration, authentication, sessions and MFA
 
   - name: Users
     description: User management
 
+  - name: Profiles
+    description: Authenticated user profile
+
+  - name: Accounts
+    description: User account management
+
   - name: Wallets
-    description: Wallet operations
+    description: Multi-currency wallet operations
+
+  - name: Transactions
+    description: Financial transactions and transfers
+
+  - name: Recipients
+    description: Recipient management
 
   - name: Payments
-    description: Payment operations
+    description: Payment operations and refunds
+
+  - name: Payment Links
+    description: Payment link lifecycle
 
   - name: Exchange
-    description: Currency exchange
+    description: Currency exchange quotes and conversions
 
   - name: Exchange Rates
     description: Exchange rate management
 
-  - name: Countries
-    description: Supported countries
-
-  - name: Currencies
-    description: Supported currencies
-
-  - name: Ledger
-    description: Immutable financial ledger
-
   - name: Merchants
-    description: Merchant accounts
+    description: Merchant accounts and members
 
-  - name: Audit
-    description: Audit and compliance
+  - name: Compliance
+    description: Compliance profiles and documents
+
+  - name: Notifications
+    description: In-app notifications
+
+  - name: API Keys
+    description: API credential management
+
+security:
+  - BearerAuth: []
 
 paths:
   /auth/register:
     post:
       tags:
         - Authentication
-
       summary: Register a new user
-
-      description: Creates a new Knissa account.
-
+      description: Creates a new Knissa user.
       operationId: registerUser
-
       security: []
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/RegisterRequest"
-
       responses:
         "201":
-          description: User successfully registered.
-
+          description: User registered successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RegisterResponse"
-
+                $ref: "#/components/schemas/ApiResponse"
         "400":
           description: Validation error.
-
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
         "409":
-          description: Email already registered.
-
+          description: User already exists.
           content:
             application/json:
               schema:
@@ -123,144 +125,87 @@ paths:
     post:
       tags:
         - Authentication
-
-      summary: Authenticate user
-
-      description: |
-        Authenticates a user and returns
-        an access token.
-
+      summary: Login
+      description: Authenticates a user and creates an authenticated session.
       operationId: loginUser
-
       security: []
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/LoginRequest"
-
       responses:
         "200":
-          description: Authentication successful.
-
+          description: Login successful.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResponse"
-
         "400":
           description: Validation error.
-
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
         "401":
           description: Invalid credentials.
-
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /users:
+  /auth/verify-email:
     post:
       tags:
-        - Users
-
-      summary: Create a new user
-
-      description: Creates a new platform user.
-
-      operationId: createUser
-
+        - Authentication
+      summary: Verify email
+      description: Verifies the user's email address.
+      operationId: verifyEmail
+      security: []
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateUserRequest"
-
+              $ref: "#/components/schemas/VerifyEmailRequest"
       responses:
-        "201":
-          description: User successfully created.
-
+        "200":
+          description: Email verified successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
-
+                $ref: "#/components/schemas/ApiResponse"
         "400":
-          description: Validation error.
-
+          description: Invalid verification data.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "409":
-          description: Email already exists.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-    get:
+  /auth/resend-verification:
+    post:
       tags:
-        - Users
-
-      summary: List users
-
-      description: Returns all registered users.
-
-      operationId: listUsers
-
+        - Authentication
+      summary: Resend email verification
+      description: Resends the email verification request.
+      operationId: resendEmailVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationRequest"
       responses:
         "200":
-          description: Users retrieved successfully.
-
+          description: Verification request processed successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserListResponse"
-
-        "401":
-          description: Unauthorized.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /users/me:
-    get:
-      tags:
-        - Users
-
-      summary: Get authenticated user
-
-      description: Returns the authenticated user's profile.
-
-      operationId: currentUser
-
-      responses:
-        "200":
-          description: User profile.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserResponse"
-
-        "401":
-          description: Unauthorized.
-
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          description: Invalid request.
           content:
             application/json:
               schema:
@@ -270,51 +215,25 @@ paths:
     post:
       tags:
         - Authentication
-
       summary: Refresh access token
-
-      description: Generates a new access token using a valid refresh token.
-
+      description: Generates a new access token using a refresh token.
       operationId: refreshToken
-
       security: []
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              type: object
-
-              required:
-                - refreshToken
-
-              properties:
-                refreshToken:
-                  type: string
-                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
+              $ref: "#/components/schemas/RefreshTokenRequest"
       responses:
         "200":
           description: Token refreshed successfully.
-
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginResponse"
-
+                $ref: "#/components/schemas/RefreshTokenResponse"
         "401":
-          description: Invalid refresh token.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-        "422":
-          description: Validation failed.
-
+          description: Invalid or expired refresh token.
           content:
             application/json:
               schema:
@@ -324,263 +243,778 @@ paths:
     post:
       tags:
         - Authentication
-
-      summary: Logout current session
-
-      description: Revokes the current refresh token.
-
+      summary: Logout
+      description: Logs out the authenticated user.
       operationId: logoutUser
-
       responses:
-        "204":
-          description: Logged out successfully.
-
+        "200":
+          description: Logout successful.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
         "401":
           description: Unauthorized.
-
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /auth/logout-all:
+  /auth/sessions:
+    get:
+      tags:
+        - Authentication
+      summary: Get active sessions
+      description: Returns the authenticated user's active sessions.
+      operationId: getSessions
+      responses:
+        "200":
+          description: Sessions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/sessions/{id}:
+    delete:
+      tags:
+        - Authentication
+      summary: Revoke session
+      description: Revokes an authenticated user's session.
+      operationId: revokeSession
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Session revoked successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/password:
+    patch:
+      tags:
+        - Authentication
+      summary: Change password
+      description: Changes the authenticated user's password.
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          description: Invalid password data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/mfa/enroll:
     post:
       tags:
         - Authentication
-
-      summary: Logout from all devices
-
-      description: Revokes every active refresh token for the authenticated user.
-
-      operationId: logoutAllDevices
-
+      summary: Enroll MFA
+      description: Starts MFA enrollment for the authenticated user.
+      operationId: enrollMfa
       responses:
-        "204":
-          description: All sessions revoked successfully.
-
+        "200":
+          description: MFA enrollment initiated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MfaEnrollmentResponse"
         "401":
           description: Unauthorized.
-
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /wallets/open-account:
+  /auth/mfa/verify:
     post:
       tags:
-        - Wallets
-
-      summary: Open wallet
-
-      description: Creates a wallet for a specific currency.
-
-      operationId: openWalletAccount
-
+        - Authentication
+      summary: Verify MFA
+      description: Verifies the MFA code for the authenticated user.
+      operationId: verifyMfa
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OpenWalletRequest"
-
-      responses:
-        "201":
-          description: Wallet successfully created.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WalletResponse"
-
-        "400":
-          description: Validation error.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-        "409":
-          description: Wallet already exists.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /wallets/deposit:
-    post:
-      tags:
-        - Wallets
-
-      summary: Deposit funds
-
-      description: Deposits money into a wallet.
-
-      operationId: depositFunds
-
-      requestBody:
-        required: true
-
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DepositRequest"
-
+              $ref: "#/components/schemas/MfaVerifyRequest"
       responses:
         "200":
-          description: Deposit completed.
-
+          description: MFA verification successful.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WalletResponse"
-
+                $ref: "#/components/schemas/ApiResponse"
         "400":
-          description: Validation error.
-
+          description: Invalid MFA code.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Business rule violation.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /wallets/withdraw:
+  /auth/mfa/verify-login:
     post:
       tags:
-        - Wallets
-
-      summary: Withdraw funds
-
-      description: Withdraws money from a wallet.
-
-      operationId: withdrawFunds
-
+        - Authentication
+      summary: Verify MFA during login
+      description: Verifies the MFA challenge generated during login.
+      operationId: verifyMfaLogin
+      security: []
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WithdrawRequest"
-
+              $ref: "#/components/schemas/MfaLoginVerifyRequest"
       responses:
         "200":
-          description: Withdrawal completed.
-
+          description: MFA login verification successful.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WalletResponse"
-
+                $ref: "#/components/schemas/LoginResponse"
         "400":
-          description: Validation error.
-
+          description: Invalid MFA verification data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: MFA verification failed.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Insufficient balance.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /wallets/transfer:
-    post:
+  /users:
+    get:
       tags:
-        - Wallets
+        - Users
+      summary: List users
+      description: Returns users available to administrators and support users.
+      operationId: listUsers
+      responses:
+        "200":
+          description: Users retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-      summary: Transfer funds
-
-      description: Transfers money between wallets.
-
-      operationId: transferFunds
-
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Returns a user by UUID. Requires administrative or support access.
+      operationId: getUserById
       parameters:
-        - name: Idempotency-Key
-          in: header
-          required: true
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: User retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-          schema:
-            type: string
-
+    patch:
+      tags:
+        - Users
+      summary: Update user
+      description: Updates a user. Requires administrator access.
+      operationId: updateUser
+      parameters:
+        - $ref: "#/components/parameters/Id"
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TransferRequest"
-
+              $ref: "#/components/schemas/UpdateUserRequest"
       responses:
         "200":
-          description: Transfer completed successfully.
-
+          description: User updated successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TransferResponse"
-
+                $ref: "#/components/schemas/UserResponse"
         "400":
           description: Validation error.
-
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Insufficient balance.
-
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      description: Deletes a user. Requires administrator access.
+      operationId: deleteUser
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: User deleted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /wallets/{accountNumber}/statement:
+  /profiles/me:
+    get:
+      tags:
+        - Profiles
+      summary: Get my profile
+      description: Returns the authenticated user's profile.
+      operationId: getMyProfile
+      responses:
+        "200":
+          description: Profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags:
+        - Profiles
+      summary: Update my profile
+      description: Updates the authenticated user's profile.
+      operationId: updateMyProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts:
+    get:
+      tags:
+        - Accounts
+      summary: List my accounts
+      description: Returns accounts belonging to the authenticated user.
+      operationId: listMyAccounts
+      responses:
+        "200":
+          description: Accounts retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /accounts/{id}:
+    get:
+      tags:
+        - Accounts
+      summary: Get account by ID
+      description: Returns an account belonging to the authenticated user.
+      operationId: getAccountById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Account retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Account not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags:
+        - Accounts
+      summary: Update account
+      description: Updates an account belonging to the authenticated user.
+      operationId: updateAccount
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountRequest"
+      responses:
+        "200":
+          description: Account updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Account not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wallets:
     get:
       tags:
         - Wallets
-
-      summary: Wallet statement
-
-      description: Returns the transaction history for a wallet.
-
-      operationId: walletStatement
-
-      parameters:
-        - name: accountNumber
-          in: path
-          required: true
-
-          schema:
-            type: string
-
+      summary: List my wallets
+      description: Returns wallets belonging to the authenticated user's accounts.
+      operationId: listMyWallets
       responses:
         "200":
-          description: Statement successfully retrieved.
-
+          description: Wallets retrieved successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatementResponse"
+                $ref: "#/components/schemas/WalletListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  /wallets/{id}:
+    get:
+      tags:
+        - Wallets
+      summary: Get wallet by ID
+      description: Returns a wallet belonging to the authenticated user.
+      operationId: getWalletById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Wallet retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Wallet not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  /transactions:
+    get:
+      tags:
+        - Transactions
+      summary: List my transactions
+      description: Returns transactions available to the authenticated user.
+      operationId: listMyTransactions
+      responses:
+        "200":
+          description: Transactions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /transactions/{id}:
+    get:
+      tags:
+        - Transactions
+      summary: Get transaction by ID
+      description: Returns a transaction belonging to the authenticated user.
+      operationId: getTransactionById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Transaction retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Transaction not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /transactions/transfer:
+    post:
+      tags:
+        - Transactions
+      summary: Create internal transfer
+      description: Transfers funds between eligible Knissa wallets.
+      operationId: createTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransferRequest"
+      responses:
+        "201":
+          description: Transfer created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "400":
+          description: Invalid transfer request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Wallet or recipient not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /transactions/deposit:
+    post:
+      tags:
+        - Transactions
+      summary: Create test deposit
+      description: |
+        Creates a test deposit for development or administrative testing.
+
+        This endpoint is restricted to administrators and is not intended
+        for production financial deposits.
+      operationId: createTestDeposit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepositRequest"
+      responses:
+        "201":
+          description: Test deposit created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "400":
+          description: Invalid deposit request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipients:
+    get:
+      tags:
+        - Recipients
+      summary: List my recipients
+      description: Returns recipients belonging to the authenticated user.
+      operationId: listRecipients
+      responses:
+        "200":
+          description: Recipients retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipientListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - Recipients
+      summary: Create recipient
+      description: Creates a recipient for the authenticated user.
+      operationId: createRecipient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecipientRequest"
+      responses:
+        "201":
+          description: Recipient created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipientResponse"
+        "400":
+          description: Invalid recipient data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /recipients/{id}:
+    get:
+      tags:
+        - Recipients
+      summary: Get recipient by ID
+      description: Returns a recipient belonging to the authenticated user.
+      operationId: getRecipientById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Recipient retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipientResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Recipient not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags:
+        - Recipients
+      summary: Update recipient
+      description: Updates a recipient belonging to the authenticated user.
+      operationId: updateRecipient
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRecipientRequest"
+      responses:
+        "200":
+          description: Recipient updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipientResponse"
+        "400":
+          description: Invalid recipient data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Recipient not found.
           content:
             application/json:
               schema:
@@ -590,261 +1024,429 @@ paths:
     post:
       tags:
         - Payments
-
       summary: Create payment
-
-      description: Creates and processes a payment transaction.
-
+      description: Creates a payment for the authenticated user.
       operationId: createPayment
-
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: true
-
-          schema:
-            type: string
-
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PaymentRequest"
-
+              $ref: "#/components/schemas/CreatePaymentRequest"
       responses:
         "201":
           description: Payment created successfully.
-
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentResponse"
-
         "400":
-          description: Validation error.
-
+          description: Invalid payment request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Business rule violation.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /payments/{id}:
     get:
       tags:
         - Payments
-
-      summary: Get payment details
-
-      description: Returns a payment by its identifier.
-
-      operationId: getPaymentById
-
-      parameters:
-        - name: id
-          in: path
-          required: true
-
-          schema:
-            type: string
-            format: uuid
-
+      summary: List my payments
+      description: Returns payments associated with the authenticated user.
+      operationId: listMyPayments
       responses:
         "200":
-          description: Payment found.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PaymentResponse"
-
-        "404":
-          description: Payment not found.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /payments/history:
-    get:
-      tags:
-        - Payments
-
-      summary: Payment history
-
-      description: Returns all payments of the authenticated user.
-
-      operationId: paymentHistory
-
-      responses:
-        "200":
-          description: Payment history.
-
+          description: Payments retrieved successfully.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  /exchange:
-    post:
+  /payments/{paymentId}:
+    get:
       tags:
-        - Exchange
-
-      summary: Exchange currencies
-
-      description: Converts money from one wallet currency to another.
-
-      operationId: exchangeCurrency
-
+        - Payments
+      summary: Get payment by ID
+      description: Returns a payment by its identifier.
+      operationId: getPaymentById
       parameters:
-        - name: Idempotency-Key
-          in: header
+        - name: paymentId
+          in: path
           required: true
-
+          description: Payment UUID
           schema:
             type: string
+            format: uuid
+      responses:
+        "200":
+          description: Payment retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  /payments/{paymentId}/refund:
+    post:
+      tags:
+        - Payments
+      summary: Refund payment
+      description: Creates a refund for an eligible payment.
+      operationId: refundPayment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: Payment UUID
+          schema:
+            type: string
+            format: uuid
       requestBody:
-        required: true
-
+        required: false
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ExchangeRequest"
-
+              $ref: "#/components/schemas/RefundPaymentRequest"
       responses:
         "200":
-          description: Exchange completed successfully.
-
+          description: Payment refunded successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExchangeResponse"
-
+                $ref: "#/components/schemas/PaymentResponse"
         "400":
-          description: Validation error.
-
+          description: Payment cannot be refunded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Insufficient balance.
-
+  /payment-links:
+    post:
+      tags:
+        - Payment Links
+      summary: Create payment link
+      description: Creates a payment link.
+      operationId: createPaymentLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentLinkRequest"
+      responses:
+        "201":
+          description: Payment link created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentLinkResponse"
+        "400":
+          description: Invalid payment link data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /exchange/history:
+    get:
+      tags:
+        - Payment Links
+      summary: List payment links
+      description: Returns payment links available to the authenticated user.
+      operationId: listPaymentLinks
+      responses:
+        "200":
+          description: Payment links retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentLinkListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment-links/{id}:
+    get:
+      tags:
+        - Payment Links
+      summary: Get payment link
+      description: Returns a payment link by ID.
+      operationId: getPaymentLinkById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Payment link retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentLinkResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment link not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment-links/{id}/cancel:
+    patch:
+      tags:
+        - Payment Links
+      summary: Cancel payment link
+      description: Cancels an eligible payment link.
+      operationId: cancelPaymentLink
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Payment link cancelled successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentLinkResponse"
+        "400":
+          description: Payment link cannot be cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment link not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment-links/{id}/pay:
+    post:
+      tags:
+        - Payment Links
+      summary: Pay payment link
+      description: Pays an eligible payment link.
+      operationId: payPaymentLink
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayPaymentLinkRequest"
+      responses:
+        "200":
+          description: Payment link paid successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "400":
+          description: Payment link cannot be paid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment link not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /exchange:
     get:
       tags:
         - Exchange
-
-      summary: Exchange history
-
-      description: Returns all exchange operations.
-
-      operationId: exchangeHistory
-
+      summary: List exchanges
+      description: Returns currency exchanges associated with the authenticated user.
+      operationId: listExchanges
       responses:
         "200":
-          description: Exchange history.
-
+          description: Exchanges retrieved successfully.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExchangeListResponse"
-
-  /exchange-rates:
-    post:
-      tags:
-        - Exchange Rates
-
-      summary: Create exchange rate
-
-      description: Creates a new exchange rate.
-
-      operationId: createExchangeRate
-
-      requestBody:
-        required: true
-
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ExchangeRateRequest"
-
-      responses:
-        "201":
-          description: Exchange rate created.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExchangeRateResponse"
-
-        "400":
-          description: Validation error.
-
+        "401":
+          description: Unauthorized.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /exchange/{id}:
+    get:
+      tags:
+        - Exchange
+      summary: Get exchange by ID
+      description: Returns an exchange by ID.
+      operationId: getExchangeById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Exchange retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Exchange not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /exchange/quotes:
+    post:
+      tags:
+        - Exchange
+      summary: Create exchange quote
+      description: Creates a currency exchange quote.
+      operationId: createExchangeQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExchangeQuoteRequest"
+      responses:
+        "201":
+          description: Exchange quote created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeQuoteResponse"
+        "400":
+          description: Invalid exchange request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /exchange/quotes/{id}/accept:
+    post:
+      tags:
+        - Exchange
+      summary: Accept exchange quote
+      description: Accepts an eligible exchange quote.
+      operationId: acceptExchangeQuote
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Exchange quote accepted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeResponse"
+        "400":
+          description: Quote cannot be accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Exchange quote not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /exchange-rates:
     get:
       tags:
         - Exchange Rates
-
       summary: List exchange rates
-
-      description: Returns all configured exchange rates.
-
+      description: Returns available exchange rates.
       operationId: listExchangeRates
-
       responses:
         "200":
-          description: Exchange rates list.
-
+          description: Exchange rates retrieved successfully.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExchangeRateListResponse"
-
-  /countries:
-    get:
-      tags:
-        - Countries
-
-      summary: List countries
-
-      description: Returns all countries supported by the platform.
-
-      operationId: listCountries
-
-      responses:
-        "200":
-          description: Countries retrieved successfully.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CountryListResponse"
-
-        "401":
-          description: Unauthorized.
-
+        "400":
+          description: Invalid request.
           content:
             application/json:
               schema:
@@ -852,196 +1454,230 @@ paths:
 
     post:
       tags:
-        - Countries
-
-      summary: Create country
-
-      description: Creates a new country.
-
-      operationId: createCountry
-
+        - Exchange Rates
+      summary: Create exchange rate
+      description: Creates an exchange rate.
+      operationId: createExchangeRate
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CountryRequest"
-
+              $ref: "#/components/schemas/CreateExchangeRateRequest"
       responses:
         "201":
-          description: Country created successfully.
-
+          description: Exchange rate created successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Country"
-
-        "409":
-          description: Country already exists.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-        "422":
-          description: Validation failed.
-
+                $ref: "#/components/schemas/ExchangeRateResponse"
+        "400":
+          description: Invalid exchange rate data.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /countries/{id}:
+  /exchange-rates/{id}:
     get:
       tags:
-        - Countries
-
-      summary: Get country by ID
-
-      description: Retrieves a country by its unique identifier.
-
-      operationId: getCountryById
-
+        - Exchange Rates
+      summary: Get exchange rate by ID
+      description: Returns an exchange rate by ID.
+      operationId: getExchangeRateById
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Country UUID
-          schema:
-            type: string
-            format: uuid
-
+        - $ref: "#/components/parameters/Id"
       responses:
         "200":
-          description: Country retrieved successfully.
-
+          description: Exchange rate retrieved successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Country"
-
+                $ref: "#/components/schemas/ExchangeRateResponse"
         "404":
-          description: Country not found.
-
+          description: Exchange rate not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-    put:
+    patch:
       tags:
-        - Countries
-
-      summary: Update country
-
-      description: Updates an existing country.
-
-      operationId: updateCountry
-
+        - Exchange Rates
+      summary: Update exchange rate
+      description: Updates an exchange rate.
+      operationId: updateExchangeRate
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-
+        - $ref: "#/components/parameters/Id"
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CountryRequest"
-
+              $ref: "#/components/schemas/UpdateExchangeRateRequest"
       responses:
         "200":
-          description: Country updated successfully.
-
+          description: Exchange rate updated successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Country"
-
+                $ref: "#/components/schemas/ExchangeRateResponse"
+        "400":
+          description: Invalid exchange rate data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Country not found.
-
+          description: Exchange rate not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Validation failed.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-    delete:
+  /exchange-rates/{id}/expire:
+    patch:
       tags:
-        - Countries
-
-      summary: Delete country
-
-      description: Deletes a country.
-
-      operationId: deleteCountry
-
+        - Exchange Rates
+      summary: Expire exchange rate
+      description: Marks an exchange rate as expired.
+      operationId: expireExchangeRate
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-
-      responses:
-        "204":
-          description: Country deleted successfully.
-
-        "404":
-          description: Country not found.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-        "409":
-          description: Country cannot be deleted because it is being used.
-
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /currencies:
-    get:
-      tags:
-        - Currencies
-
-      summary: List currencies
-
-      description: Returns all active currencies supported by the platform.
-
-      operationId: listCurrencies
-
+        - $ref: "#/components/parameters/Id"
       responses:
         "200":
-          description: Currencies retrieved successfully.
-
+          description: Exchange rate expired successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CurrencyListResponse"
+                $ref: "#/components/schemas/ExchangeRateResponse"
+        "400":
+          description: Exchange rate cannot be expired.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Exchange rate not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  /merchants:
+    post:
+      tags:
+        - Merchants
+      summary: Create merchant
+      description: Creates a merchant for the authenticated user.
+      operationId: createMerchant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMerchantRequest"
+      responses:
+        "201":
+          description: Merchant created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantResponse"
+        "400":
+          description: Invalid merchant data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  /merchants/me:
+    get:
+      tags:
+        - Merchants
+      summary: Get my merchant
+      description: Returns the merchant associated with the authenticated user.
+      operationId: getMyMerchant
+      responses:
+        "200":
+          description: Merchant retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Merchant not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags:
+        - Merchants
+      summary: Update my merchant
+      description: Updates the merchant associated with the authenticated user.
+      operationId: updateMyMerchant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMerchantRequest"
+      responses:
+        "200":
+          description: Merchant updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantResponse"
+        "400":
+          description: Invalid merchant data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Merchant not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /merchants/members:
+    get:
+      tags:
+        - Merchants
+      summary: List merchant members
+      description: Returns members of the authenticated user's merchant.
+      operationId: listMerchantMembers
+      responses:
+        "200":
+          description: Merchant members retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantMemberListResponse"
+        "401":
+          description: Unauthorized.
           content:
             application/json:
               schema:
@@ -1049,138 +1685,598 @@ paths:
 
     post:
       tags:
-        - Currencies
-
-      summary: Create currency
-
-      description: Creates a new currency.
-
-      operationId: createCurrency
-
+        - Merchants
+      summary: Add merchant member
+      description: Adds a member to the authenticated user's merchant.
+      operationId: addMerchantMember
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CurrencyRequest"
-
+              $ref: "#/components/schemas/AddMerchantMemberRequest"
       responses:
         "201":
-          description: Currency created successfully.
-
+          description: Merchant member added successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Currency"
-
-        "409":
-          description: Currency code already exists.
-
+                $ref: "#/components/schemas/MerchantMemberResponse"
+        "400":
+          description: Invalid member data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient merchant permissions.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Validation failed.
 
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /currencies/{id}:
-    get:
+  /merchants/members/{id}/deactivate:
+    patch:
       tags:
-        - Currencies
-
-      summary: Get currency by ID
-
-      description: Retrieves a currency by its unique identifier.
-
-      operationId: getCurrencyById
-
+        - Merchants
+      summary: Deactivate merchant member
+      description: Deactivates a merchant member.
+      operationId: deactivateMerchantMember
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Currency UUID
-          schema:
-            type: string
-            format: uuid
-
+        - $ref: "#/components/parameters/Id"
       responses:
         "200":
-          description: Currency retrieved successfully.
-
+          description: Merchant member deactivated successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Currency"
-
+                $ref: "#/components/schemas/MerchantMemberResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient merchant permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Currency not found.
-
+          description: Merchant member not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-    put:
+  /merchants/members/{memberId}/activate:
+    patch:
       tags:
-        - Currencies
-
-      summary: Update currency
-
-      description: Updates an existing currency.
-
-      operationId: updateCurrency
-
+        - Merchants
+      summary: Activate merchant member
+      description: Activates a merchant member.
+      operationId: activateMerchantMember
       parameters:
-        - name: id
+        - name: memberId
           in: path
           required: true
+          description: Merchant member UUID
           schema:
             type: string
             format: uuid
+      responses:
+        "200":
+          description: Merchant member activated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantMemberResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient merchant permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Merchant member not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+  /merchants/members/{memberId}/role:
+    patch:
+      tags:
+        - Merchants
+      summary: Update merchant member role
+      description: Updates the role assigned to a merchant member.
+      operationId: updateMerchantMemberRole
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          description: Merchant member UUID
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
-
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CurrencyRequest"
-
+              $ref: "#/components/schemas/UpdateMerchantMemberRoleRequest"
       responses:
         "200":
-          description: Currency updated successfully.
-
+          description: Merchant member role updated successfully.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Currency"
-
+                $ref: "#/components/schemas/MerchantMemberResponse"
+        "400":
+          description: Invalid role.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient merchant permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Currency not found.
-
+          description: Merchant member not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "409":
-          description: Currency code already exists.
-
+  /merchants/members/{memberId}/transfer-ownership:
+    patch:
+      tags:
+        - Merchants
+      summary: Transfer merchant ownership
+      description: Transfers ownership of a merchant to another member.
+      operationId: transferMerchantOwnership
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          description: New merchant owner member UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Merchant ownership transferred successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantResponse"
+        "400":
+          description: Ownership transfer failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient merchant permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Merchant member not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "422":
-          description: Validation failed.
+  /merchants/settings:
+    get:
+      tags:
+        - Merchants
+      summary: Get merchant settings
+      description: Returns settings for the authenticated user's merchant.
+      operationId: getMerchantSettings
+      responses:
+        "200":
+          description: Merchant settings retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantSettingsResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
+    patch:
+      tags:
+        - Merchants
+      summary: Update merchant settings
+      description: Updates settings for the authenticated user's merchant.
+      operationId: updateMerchantSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMerchantSettingsRequest"
+      responses:
+        "200":
+          description: Merchant settings updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantSettingsResponse"
+        "400":
+          description: Invalid settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /compliance/me:
+    get:
+      tags:
+        - Compliance
+      summary: Get my compliance profile
+      description: Returns the authenticated user's compliance profile.
+      operationId: getMyComplianceProfile
+      responses:
+        "200":
+          description: Compliance profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceProfileResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /compliance/documents:
+    post:
+      tags:
+        - Compliance
+      summary: Submit compliance document
+      description: Submits a compliance document for the authenticated user.
+      operationId: createComplianceDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComplianceDocumentRequest"
+      responses:
+        "201":
+          description: Compliance document submitted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceDocumentResponse"
+        "400":
+          description: Invalid compliance document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags:
+        - Compliance
+      summary: List my compliance documents
+      description: Returns compliance documents submitted by the authenticated user.
+      operationId: listMyComplianceDocuments
+      responses:
+        "200":
+          description: Compliance documents retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceDocumentListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /compliance/reviews:
+    post:
+      tags:
+        - Compliance
+      summary: Create compliance review
+      description: Creates an administrative compliance review.
+      operationId: createComplianceReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComplianceReviewRequest"
+      responses:
+        "201":
+          description: Compliance review created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceReviewResponse"
+        "400":
+          description: Invalid compliance review.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Administrator role required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications:
+    post:
+      tags:
+        - Notifications
+      summary: Create notification
+      description: Creates an in-app notification.
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNotificationRequest"
+      responses:
+        "201":
+          description: Notification created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "400":
+          description: Invalid notification data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags:
+        - Notifications
+      summary: List my notifications
+      description: Returns notifications for the authenticated user's account.
+      operationId: listNotifications
+      responses:
+        "200":
+          description: Notifications retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread notification count
+      description: Returns the number of unread notifications.
+      operationId: getUnreadNotificationCount
+      responses:
+        "200":
+          description: Unread count retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadCountResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications/{id}:
+    get:
+      tags:
+        - Notifications
+      summary: Get notification by ID
+      description: Returns a notification by ID.
+      operationId: getNotificationById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Notification retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notification not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications/{id}/read:
+    patch:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Marks a notification as read.
+      operationId: markNotificationAsRead
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Notification marked as read successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Notification not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api-keys:
+    post:
+      tags:
+        - API Keys
+      summary: Create API key
+      description: |
+        Creates a new API key for the authenticated user's account.
+
+        The raw secret is returned only during creation and must not be
+        persisted by the server in plaintext.
+      operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiKeyRequest"
+      responses:
+        "201":
+          description: API key created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreateResponse"
+        "400":
+          description: Invalid API key data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags:
+        - API Keys
+      summary: List API keys
+      description: Returns API keys belonging to the authenticated user's account.
+      operationId: listApiKeys
+      responses:
+        "200":
+          description: API keys retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyListResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api-keys/{id}:
+    get:
+      tags:
+        - API Keys
+      summary: Get API key
+      description: Returns an API key by ID.
+      operationId: getApiKeyById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: API key retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: API key not found.
           content:
             application/json:
               schema:
@@ -1188,37 +2284,56 @@ paths:
 
     delete:
       tags:
-        - Currencies
-
-      summary: Delete currency
-
-      description: Deletes a currency.
-
-      operationId: deleteCurrency
-
+        - API Keys
+      summary: Delete API key
+      description: Permanently deletes an API key.
+      operationId: deleteApiKey
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-
+        - $ref: "#/components/parameters/Id"
       responses:
-        "204":
-          description: Currency deleted successfully.
-
+        "200":
+          description: API key deleted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Currency not found.
-
+          description: API key not found.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-        "409":
-          description: Currency cannot be deleted because it is in use.
-
+  /api-keys/{id}/revoke:
+    patch:
+      tags:
+        - API Keys
+      summary: Revoke API key
+      description: Revokes an API key and records the revocation timestamp.
+      operationId: revokeApiKey
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: API key revoked successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+        "401":
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: API key not found.
           content:
             application/json:
               schema:
@@ -1231,361 +2346,541 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Resource identifier.
+      schema:
+        type: string
+
   schemas:
-    ErrorResponse:
-      type: object
-
-      properties:
-        success:
-          type: boolean
-          example: false
-
-        error:
-          type: object
-
-          properties:
-            code:
-              type: string
-              example: VALIDATION_ERROR
-
-            message:
-              type: string
-              example: Validation failed.
-
-            details:
-              type: array
-
-              items:
-                type: string
-
-    Pagination:
-      type: object
-
-      properties:
-        page:
-          type: integer
-          example: 1
-
-        limit:
-          type: integer
-          example: 20
-
-        total:
-          type: integer
-          example: 150
-
-        pages:
-          type: integer
-          example: 8
-
     ApiResponse:
       type: object
-
       properties:
         success:
           type: boolean
           example: true
-
         message:
           type: string
-          example: Operation completed successfully.
-
+      required:
+        - success
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code.
+            message:
+              type: string
+            details:
+              type: [object, "null"]
+              additionalProperties: true
+          required:
+            - code
+            - message
+      required:
+        - success
+        - error
     RegisterRequest:
       type: object
-
-      required:
-        - name
-        - email
-        - password
-
       properties:
-        name:
-          type: string
-          minLength: 3
-          maxLength: 120
-          example: Jean Joseph
-
         email:
           type: string
           format: email
-          example: jean@email.com
-
         password:
           type: string
           format: password
-          minLength: 8
-          example: "12345678"
-
-    RegisterResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-        - type: object
-          properties:
-            data:
-              $ref: "#/components/schemas/User"
-
+        firstName:
+          type: string
+        lastName:
+          type: string
+        countryCode:
+          type: string
+          description: ISO country code, e.g. BR.
+        phone:
+          type: string
+        languageCode:
+          type: [string, "null"]
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - countryCode
+        - phone
     LoginRequest:
       type: object
-
-      required:
-        - email
-        - password
-
       properties:
         email:
           type: string
           format: email
-
         password:
           type: string
           format: password
-
+      required:
+        - email
+        - password
     LoginResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-        - type: object
-
-          properties:
-            data:
-              type: object
-
-              properties:
-                user:
-                  $ref: "#/components/schemas/User"
-
-                accessToken:
-                  type: string
-
-                expiresIn:
-                  type: integer
-                  example: 3600
-
-    User:
       type: object
-
       properties:
-        id:
+        success:
+          type: boolean
+          example: true
+        mfaRequired:
+          type: boolean
+          description: True if MFA verification must complete the login.
+        accessToken:
+          type: [string, "null"]
+        refreshToken:
+          type: [string, "null"]
+        user:
+          $ref: "#/components/schemas/UserResponseData"
+    VerifyEmailRequest:
+      type: object
+      properties:
+        token:
           type: string
-          format: uuid
-
-        name:
-          type: string
-
+      required:
+        - token
+    ResendVerificationRequest:
+      type: object
+      properties:
         email:
           type: string
           format: email
-
-        role:
-          type: string
-          enum:
-            - USER
-            - ADMIN
-            - MERCHANT
-
-        createdAt:
-          type: string
-          format: date-time
-
-        updatedAt:
-          type: string
-          format: date-time
-
-    CreateUserRequest:
-      $ref: "#/components/schemas/RegisterRequest"
-
-    UserResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-        - type: object
-
-          properties:
-            data:
-              $ref: "#/components/schemas/User"
-
-    UserListResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-        - type: object
-
-          properties:
-            pagination:
-              $ref: "#/components/schemas/Pagination"
-
-            data:
-              type: array
-
-              items:
-                $ref: "#/components/schemas/User"
-
-    Wallet:
+      required:
+        - email
+    RefreshTokenRequest:
       type: object
-
+      properties:
+        refreshToken:
+          type: string
+      required:
+        - refreshToken
+    RefreshTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          type: string
+          format: password
+      required:
+        - currentPassword
+        - newPassword
+    SessionData:
+      type: object
       properties:
         id:
           type: string
           format: uuid
-
-        accountNumber:
+        reference:
           type: string
-
-        balance:
-          type: number
-          format: double
-
-        currency:
+        deviceName:
+          type: [string, "null"]
+        deviceType:
           type: string
-
+          enum:
+            - DESKTOP
+            - LAPTOP
+            - MOBILE
+            - TABLET
+            - SMART_TV
+            - UNKNOWN
+        operatingSystem:
+          type: [string, "null"]
+        browser:
+          type: [string, "null"]
+        isTrusted:
+          type: boolean
+        ipAddress:
+          type: [string, "null"]
+        countryCode:
+          type: [string, "null"]
+        city:
+          type: [string, "null"]
         status:
           type: string
           enum:
             - ACTIVE
-            - BLOCKED
-            - CLOSED
-
+            - EXPIRED
+            - REVOKED
+        lastActivityAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
         createdAt:
           type: string
           format: date-time
-
-    WalletResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            data:
-              $ref: "#/components/schemas/Wallet"
-
-    OpenWalletRequest:
+    SessionListResponse:
       type: object
-
-      required:
-        - countryId
-        - currencyId
-
       properties:
-        countryId:
-          type: string
-          format: uuid
-
-        currencyId:
-          type: string
-          format: uuid
-
-    DepositRequest:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionData"
+    MfaEnrollmentResponse:
       type: object
-
-      required:
-        - accountNumber
-        - amount
-
       properties:
-        accountNumber:
+        success:
+          type: boolean
+          example: true
+        secret:
           type: string
-
-        amount:
-          type: number
-          format: double
-
-    WithdrawRequest:
+          description: Base32 TOTP secret.
+        otpauthUrl:
+          type: string
+          description: otpauth:// URI for QR code enrollment.
+    MfaVerifyRequest:
       type: object
-
-      required:
-        - accountNumber
-        - amount
-
       properties:
-        accountNumber:
+        code:
           type: string
-
-        amount:
-          type: number
-          format: double
-
-    TransferRequest:
-      type: object
-
+          description: 6-digit TOTP code.
       required:
-        - fromAccount
-        - toAccount
-        - amount
-
-      properties:
-        fromAccount:
-          type: string
-
-        toAccount:
-          type: string
-
-        amount:
-          type: number
-          format: double
-
-    TransferResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            transactionId:
-              type: string
-              format: uuid
-
-            data:
-              $ref: "#/components/schemas/Wallet"
-
-    StatementResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            data:
-              type: array
-
-              items:
-                type: object
-
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-
-                  type:
-                    type: string
-
-                  amount:
-                    type: number
-                    format: double
-
-                  createdAt:
-                    type: string
-                    format: date-time
-
-    Payment:
+        - code
+    MfaLoginVerifyRequest:
       type: object
-
+      properties:
+        code:
+          type: string
+          description: 6-digit TOTP code.
+        sessionToken:
+          type: string
+          description: Temporary token issued after password verification.
+      required:
+        - code
+        - sessionToken
+    UserResponseData:
+      type: object
       properties:
         id:
           type: string
           format: uuid
-
-        transactionId:
+        userNumber:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - USER
+            - SUPPORT
+            - ADMIN
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - BLOCKED
+            - SUSPENDED
+        emailVerified:
+          type: boolean
+        phoneVerified:
+          type: boolean
+        lastLoginAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/UserResponseData"
+    UserListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserResponseData"
+    UpdateUserRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - USER
+            - SUPPORT
+            - ADMIN
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - BLOCKED
+            - SUSPENDED
+    ProfileData:
+      type: object
+      properties:
+        id:
           type: string
           format: uuid
-
-        fromAccount:
+        profileNumber:
           type: string
-
-        toAccount:
+        displayName:
           type: string
-
-        amount:
-          type: number
-          format: double
-
+        legalName:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: [string, "null"]
+        lastName:
+          type: string
+        birthDate:
+          type: [string, "null"]
+          format: date-time
+        phoneCountryCode:
+          type: [string, "null"]
+        phoneNumber:
+          type: [string, "null"]
+        avatarUrl:
+          type: [string, "null"]
+        languageCode:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ProfileData"
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+        legalName:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: [string, "null"]
+        lastName:
+          type: string
+        birthDate:
+          type: [string, "null"]
+          format: date-time
+        phoneCountryCode:
+          type: [string, "null"]
+        phoneNumber:
+          type: [string, "null"]
+        avatarUrl:
+          type: [string, "null"]
+        languageCode:
+          type: [string, "null"]
+    AccountData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountNumber:
+          type: string
+        profileId:
+          type: string
+          format: uuid
+        category:
+          type: string
+          enum:
+            - PERSONAL
+            - BUSINESS
+            - MERCHANT
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - SUSPENDED
+            - CLOSED
+        displayName:
+          type: string
+        legalName:
+          type: [string, "null"]
+        countryId:
+          type: string
+          format: uuid
+        languageId:
+          type: [string, "null"]
+          format: uuid
+        timezoneId:
+          type: [string, "null"]
+          format: uuid
+        baseCurrencyId:
+          type: string
+          format: uuid
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/AccountData"
+    AccountListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountData"
+    UpdateAccountRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+        legalName:
+          type: [string, "null"]
+        languageId:
+          type: [string, "null"]
+          format: uuid
+        timezoneId:
+          type: [string, "null"]
+          format: uuid
+        isDefault:
+          type: boolean
+    WalletData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        walletNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        currencyId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - BLOCKED
+            - CLOSED
+        isDefault:
+          type: boolean
+        availableBalance:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        reservedBalance:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        totalBalance:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    WalletResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/WalletData"
+    WalletListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WalletData"
+    TransactionData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        transactionNumber:
+          type: string
+        sourceWalletId:
+          type: [string, "null"]
+          format: uuid
+        destinationWalletId:
+          type: [string, "null"]
+          format: uuid
+        currencyId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - DEPOSIT
+            - WITHDRAWAL
+            - TRANSFER
+            - EXCHANGE
+            - PAYMENT
+            - REFUND
+            - FEE
+            - ADJUSTMENT
         status:
           type: string
           enum:
@@ -1594,334 +2889,1348 @@ components:
             - COMPLETED
             - FAILED
             - CANCELLED
-
-        createdAt:
-          type: string
-          format: date-time
-
-    PaymentRequest:
-      type: object
-
-      required:
-        - fromAccount
-        - toAccount
-        - amount
-
-      properties:
-        fromAccount:
-          type: string
-
-        toAccount:
-          type: string
-
+            - REVERSED
         amount:
-          type: number
-          format: double
-
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        feeAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        netAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
         description:
-          type: string
-
-    PaymentResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            data:
-              $ref: "#/components/schemas/Payment"
-
-    PaymentListResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            pagination:
-              $ref: "#/components/schemas/Pagination"
-
-            data:
-              type: array
-
-              items:
-                $ref: "#/components/schemas/Payment"
-
-    Exchange:
-      type: object
-
-      properties:
-        id:
-          type: string
-          format: uuid
-
-        fromCurrency:
-          type: string
-
-        toCurrency:
-          type: string
-
-        amount:
-          type: number
-
-        convertedAmount:
-          type: number
-
-        exchangeRate:
-          type: number
-
+          type: [string, "null"]
+        externalReference:
+          type: [string, "null"]
+        completedAt:
+          type: [string, "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
-
-    ExchangeResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            data:
-              $ref: "#/components/schemas/Exchange"
-
-    ExchangeListResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            pagination:
-              $ref: "#/components/schemas/Pagination"
-
-            data:
-              type: array
-
-              items:
-                $ref: "#/components/schemas/Exchange"
-
-    ExchangeRate:
-      type: object
-
-      properties:
-        id:
-          type: string
-          format: uuid
-
-        fromCurrency:
-          type: string
-          example: BRL
-
-        toCurrency:
-          type: string
-          example: USD
-
-        rate:
-          type: number
-          format: double
-          example: 5.42
-
-        createdAt:
+        updatedAt:
           type: string
           format: date-time
-
-    ExchangeRateRequest:
+    TransactionResponse:
       type: object
-
-      required:
-        - fromCurrency
-        - toCurrency
-        - rate
-
       properties:
-        fromCurrency:
-          type: string
-          example: BRL
-
-        toCurrency:
-          type: string
-          example: USD
-
-        rate:
-          type: number
-          format: double
-
-    ExchangeRateResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            data:
-              $ref: "#/components/schemas/ExchangeRate"
-
-    ExchangeRateListResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            pagination:
-              $ref: "#/components/schemas/Pagination"
-
-            data:
-              type: array
-
-              items:
-                $ref: "#/components/schemas/ExchangeRate"
-
-    Country:
-      type: object
-
-      properties:
-        id:
-          type: string
-          format: uuid
-
-        name:
-          type: string
-          example: Brazil
-
-        code:
-          type: string
-          example: BR
-
-        currencyCode:
-          type: string
-          example: BRL
-
-    CountryListResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
-          properties:
-            pagination:
-              $ref: "#/components/schemas/Pagination"
-
-            data:
-              type: array
-
-              items:
-                $ref: "#/components/schemas/Country"
-
-    Currency:
-      type: object
-
-      properties:
-        id:
-          type: string
-          format: uuid
-
-        name:
-          type: string
-          example: Brazilian Real
-
-        code:
-          type: string
-          example: BRL
-
-        decimals:
-          type: integer
-          example: 2
-
-        isActive:
+        success:
           type: boolean
           example: true
-
-        symbol:
-          type: string
-          example: R$
-
-    CountryRequest:
+        data:
+          $ref: "#/components/schemas/TransactionData"
+    TransactionListResponse:
       type: object
-
-      required:
-        - name
-        - code
-
       properties:
-        name:
-          type: string
-          example: Brazil
-
-        code:
-          type: string
-          example: BR
-
-        phoneCode:
-          type: string
-          example: "55"
-
-        currencyCode:
-          type: string
-          example: BRL
-
-    CurrencyRequest:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionData"
+    CreateDepositRequest:
       type: object
-
-      required:
-        - code
-        - name
-        - symbol
-
       properties:
-        code:
+        walletId:
           type: string
-          maxLength: 10
-          example: BRL
-
-        name:
-          type: string
-          example: Brazilian Real
-
-        symbol:
-          type: string
-          example: R$
-
-        decimals:
-          type: integer
-          minimum: 0
-          maximum: 8
-          example: 2
-
-    ExchangeRequest:
-      type: object
-
-      required:
-        - fromCurrency
-        - toCurrency
-        - amount
-
-      properties:
-        fromCurrency:
-          type: string
-          example: USD
-
-        toCurrency:
-          type: string
-          example: BRL
-
+          format: uuid
         amount:
-          type: number
-          format: double
-          example: 150.75
-
-    CurrencyListResponse:
-      allOf:
-        - $ref: "#/components/schemas/ApiResponse"
-
-        - type: object
-
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        externalReference:
+          type: [string, "null"]
+        description:
+          type: [string, "null"]
+      required:
+        - walletId
+        - amount
+    CreateTransferRequest:
+      type: object
+      properties:
+        sourceWalletId:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+          description: Recipient to transfer to.
+        amount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        description:
+          type: [string, "null"]
+        idempotencyKey:
+          type: [string, "null"]
+      required:
+        - sourceWalletId
+        - recipientId
+        - amount
+    RecipientData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientNumber:
+          type: string
+        ownerAccountId:
+          type: string
+          format: uuid
+        destinationAccountId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        accountNumber:
+          type: string
+        type:
+          type: string
+          enum:
+            - PERSONAL
+            - BUSINESS
+            - MERCHANT
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+        nickname:
+          type: [string, "null"]
+        avatarUrl:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RecipientResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/RecipientData"
+    RecipientListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipientData"
+    CreateRecipientRequest:
+      type: object
+      properties:
+        destinationAccountNumber:
+          type: string
+          description: Account number of the account to add as a recipient.
+        nickname:
+          type: [string, "null"]
+      required:
+        - destinationAccountNumber
+    UpdateRecipientRequest:
+      type: object
+      properties:
+        nickname:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - BLOCKED
+    ExchangeQuoteData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        quoteNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        exchangeRateId:
+          type: string
+          format: uuid
+        sourceWalletId:
+          type: string
+          format: uuid
+        destinationWalletId:
+          type: string
+          format: uuid
+        sourceAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        destinationAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        exchangeFee:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - ACCEPTED
+            - EXPIRED
+            - CANCELLED
+        expiresAt:
+          type: string
+          format: date-time
+        acceptedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ExchangeQuoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ExchangeQuoteData"
+    CreateExchangeQuoteRequest:
+      type: object
+      properties:
+        sourceWalletId:
+          type: string
+          format: uuid
+        destinationWalletId:
+          type: string
+          format: uuid
+        sourceAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+      required:
+        - sourceWalletId
+        - destinationWalletId
+        - sourceAmount
+    ExchangeData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        exchangeNumber:
+          type: string
+        transactionId:
+          type: string
+          format: uuid
+        exchangeRateId:
+          type: string
+          format: uuid
+        quoteId:
+          type: string
+          format: uuid
+        sourceWalletId:
+          type: string
+          format: uuid
+        destinationWalletId:
+          type: string
+          format: uuid
+        sourceAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        destinationAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        exchangeFee:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        status:
+          type: string
+          enum:
+            - PENDING
+            - PROCESSING
+            - COMPLETED
+            - FAILED
+            - CANCELLED
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ExchangeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ExchangeData"
+    ExchangeListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExchangeData"
+    ExchangeRateData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        rateNumber:
+          type: string
+        baseCurrencyId:
+          type: string
+          format: uuid
+        quoteCurrencyId:
+          type: string
+          format: uuid
+        rate:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        provider:
+          type: string
+          enum:
+            - INTERNAL
+            - MANUAL
+            - ECB
+            - FIXER
+            - OPEN_EXCHANGE
+            - CUSTOM
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExchangeRateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ExchangeRateData"
+    ExchangeRateListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExchangeRateData"
+    CreateExchangeRateRequest:
+      type: object
+      properties:
+        baseCurrencyId:
+          type: string
+          format: uuid
+        quoteCurrencyId:
+          type: string
+          format: uuid
+        rate:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        provider:
+          type: string
+          enum:
+            - INTERNAL
+            - MANUAL
+            - ECB
+            - FIXER
+            - OPEN_EXCHANGE
+            - CUSTOM
+        validFrom:
+          type: string
+          format: date-time
+        validUntil:
+          type: [string, "null"]
+          format: date-time
+      required:
+        - baseCurrencyId
+        - quoteCurrencyId
+        - rate
+        - provider
+        - validFrom
+    UpdateExchangeRateRequest:
+      type: object
+      properties:
+        rate:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        validUntil:
+          type: [string, "null"]
+          format: date-time
+    PaymentData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        paymentNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        merchantId:
+          type: [string, "null"]
+          format: uuid
+        type:
+          type: string
+          enum:
+            - PURCHASE
+            - BILL_PAYMENT
+            - QR_PAYMENT
+            - PAYMENT_LINK
+            - SUBSCRIPTION
+            - DONATION
+        method:
+          type: string
+          enum:
+            - WALLET
+            - BANK_TRANSFER
+            - CARD
+            - PIX
+            - QR_CODE
+            - PAYMENT_LINK
+        status:
+          type: string
+          enum:
+            - PENDING
+            - PROCESSING
+            - COMPLETED
+            - FAILED
+            - CANCELLED
+            - REFUNDED
+        description:
+          type: [string, "null"]
+        externalReference:
+          type: [string, "null"]
+        amount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        feeAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        totalAmount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+        cancelledAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/PaymentData"
+    PaymentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentData"
+    CreatePaymentRequest:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        merchantId:
+          type: [string, "null"]
+          format: uuid
+        type:
+          type: string
+          enum:
+            - PURCHASE
+            - BILL_PAYMENT
+            - QR_PAYMENT
+            - PAYMENT_LINK
+            - SUBSCRIPTION
+            - DONATION
+        method:
+          type: string
+          enum:
+            - WALLET
+            - BANK_TRANSFER
+            - CARD
+            - PIX
+            - QR_CODE
+            - PAYMENT_LINK
+        amount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        description:
+          type: [string, "null"]
+        externalReference:
+          type: [string, "null"]
+      required:
+        - accountId
+        - type
+        - method
+        - amount
+    RefundPaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Amount to refund; omit to refund in full.
+        reason:
+          type: [string, "null"]
+    PaymentLinkData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        paymentLinkNumber:
+          type: string
+        merchantId:
+          type: string
+          format: uuid
+        currencyId:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        description:
+          type: [string, "null"]
+        externalReference:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - PAID
+            - EXPIRED
+            - CANCELLED
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        maxUses:
+          type: [integer, "null"]
+        usedCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PaymentLinkResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/PaymentLinkData"
+    PaymentLinkListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentLinkData"
+    CreatePaymentLinkRequest:
+      type: object
+      properties:
+        currencyId:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          description: Decimal amount, serialized as a string to preserve precision.
+        description:
+          type: [string, "null"]
+        externalReference:
+          type: [string, "null"]
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        maxUses:
+          type: [integer, "null"]
+      required:
+        - currencyId
+        - amount
+    PayPaymentLinkRequest:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        method:
+          type: string
+          enum:
+            - WALLET
+            - BANK_TRANSFER
+            - CARD
+            - PIX
+            - QR_CODE
+            - PAYMENT_LINK
+      required:
+        - accountId
+        - method
+    MerchantData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        merchantNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        legalName:
+          type: string
+        tradeName:
+          type: [string, "null"]
+        merchantType:
+          type: string
+          enum:
+            - INDIVIDUAL
+            - COMPANY
+            - NON_PROFIT
+            - GOVERNMENT
+        status:
+          type: string
+          enum:
+            - PENDING
+            - ACTIVE
+            - SUSPENDED
+            - BLOCKED
+            - CLOSED
+        website:
+          type: [string, "null"]
+        supportEmail:
+          type: [string, "null"]
+        supportPhone:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    MerchantResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/MerchantData"
+    CreateMerchantRequest:
+      type: object
+      properties:
+        legalName:
+          type: string
+        tradeName:
+          type: [string, "null"]
+        merchantType:
+          type: string
+          enum:
+            - INDIVIDUAL
+            - COMPANY
+            - NON_PROFIT
+            - GOVERNMENT
+        website:
+          type: [string, "null"]
+        supportEmail:
+          type: [string, "null"]
+        supportPhone:
+          type: [string, "null"]
+      required:
+        - legalName
+        - merchantType
+    UpdateMerchantRequest:
+      type: object
+      properties:
+        legalName:
+          type: string
+        tradeName:
+          type: [string, "null"]
+        website:
+          type: [string, "null"]
+        supportEmail:
+          type: [string, "null"]
+        supportPhone:
+          type: [string, "null"]
+    MerchantMemberData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        merchantMemberNumber:
+          type: string
+        merchantId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - OWNER
+            - ADMIN
+            - MANAGER
+            - FINANCE
+            - OPERATOR
+            - CASHIER
+            - SUPPORT
+            - VIEWER
+        isActive:
+          type: boolean
+        joinedAt:
+          type: string
+          format: date-time
+        invitedByAccountId:
+          type: [string, "null"]
+          format: uuid
+    MerchantMemberResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/MerchantMemberData"
+    MerchantMemberListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MerchantMemberData"
+    AddMerchantMemberRequest:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - OWNER
+            - ADMIN
+            - MANAGER
+            - FINANCE
+            - OPERATOR
+            - CASHIER
+            - SUPPORT
+            - VIEWER
+      required:
+        - accountId
+        - role
+    UpdateMerchantMemberRoleRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - OWNER
+            - ADMIN
+            - MANAGER
+            - FINANCE
+            - OPERATOR
+            - CASHIER
+            - SUPPORT
+            - VIEWER
+      required:
+        - role
+    MerchantSettingsData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        merchantId:
+          type: string
+          format: uuid
+        displayName:
+          type: [string, "null"]
+        logoUrl:
+          type: [string, "null"]
+        websiteUrl:
+          type: [string, "null"]
+        supportEmail:
+          type: [string, "null"]
+        supportPhone:
+          type: [string, "null"]
+        languageId:
+          type: [string, "null"]
+          format: uuid
+        timezoneId:
+          type: [string, "null"]
+          format: uuid
+        currencyId:
+          type: [string, "null"]
+          format: uuid
+        allowWalletPayments:
+          type: boolean
+        allowQrCodePayments:
+          type: boolean
+        allowPaymentLinks:
+          type: boolean
+        autoSettlement:
+          type: boolean
+        emailNotifications:
+          type: boolean
+        smsNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+        whatsappNotifications:
+          type: boolean
+    MerchantSettingsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/MerchantSettingsData"
+    UpdateMerchantSettingsRequest:
+      type: object
+      properties:
+        displayName:
+          type: [string, "null"]
+        logoUrl:
+          type: [string, "null"]
+        websiteUrl:
+          type: [string, "null"]
+        supportEmail:
+          type: [string, "null"]
+        supportPhone:
+          type: [string, "null"]
+        allowWalletPayments:
+          type: boolean
+        allowQrCodePayments:
+          type: boolean
+        allowPaymentLinks:
+          type: boolean
+        autoSettlement:
+          type: boolean
+        emailNotifications:
+          type: boolean
+        smsNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+        whatsappNotifications:
+          type: boolean
+    ComplianceProfileData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        complianceProfileNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        verificationLevel:
+          type: string
+          enum:
+            - NONE
+            - BASIC
+            - STANDARD
+            - ENHANCED
+        verificationStatus:
+          type: string
+          enum:
+            - PENDING
+            - IN_REVIEW
+            - APPROVED
+            - REJECTED
+            - EXPIRED
+        riskLevel:
+          type: string
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+            - CRITICAL
+        verifiedAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        lastReviewAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ComplianceProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ComplianceProfileData"
+    ComplianceDocumentData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        complianceDocumentNumber:
+          type: string
+        complianceProfileId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - NATIONAL_ID
+            - PASSPORT
+            - DRIVER_LICENSE
+            - TAX_ID
+            - BUSINESS_REGISTRATION
+            - PROOF_OF_ADDRESS
+            - SELFIE
+            - OTHER
+        countryId:
+          type: string
+          format: uuid
+        documentIdentifier:
+          type: string
+        issuingAuthority:
+          type: [string, "null"]
+        issuedAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        frontImageUrl:
+          type: [string, "null"]
+        backImageUrl:
+          type: [string, "null"]
+        selfieImageUrl:
+          type: [string, "null"]
+        status:
+          type: string
+          enum:
+            - PENDING
+            - UNDER_REVIEW
+            - APPROVED
+            - REJECTED
+            - EXPIRED
+        verifiedAt:
+          type: [string, "null"]
+          format: date-time
+        rejectionReason:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ComplianceDocumentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ComplianceDocumentData"
+    ComplianceDocumentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplianceDocumentData"
+    CreateComplianceDocumentRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - NATIONAL_ID
+            - PASSPORT
+            - DRIVER_LICENSE
+            - TAX_ID
+            - BUSINESS_REGISTRATION
+            - PROOF_OF_ADDRESS
+            - SELFIE
+            - OTHER
+        countryId:
+          type: string
+          format: uuid
+        documentIdentifier:
+          type: string
+        issuingAuthority:
+          type: [string, "null"]
+        issuedAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        frontImageUrl:
+          type: [string, "null"]
+        backImageUrl:
+          type: [string, "null"]
+        selfieImageUrl:
+          type: [string, "null"]
+      required:
+        - type
+        - countryId
+        - documentIdentifier
+    ComplianceReviewData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        complianceReviewNumber:
+          type: string
+        complianceProfileId:
+          type: string
+          format: uuid
+        reviewedByAccountId:
+          type: [string, "null"]
+          format: uuid
+        reviewDuration:
+          type: [integer, "null"]
+        decision:
+          type: string
+          enum:
+            - APPROVED
+            - REJECTED
+            - MANUAL_REVIEW
+        notes:
+          type: [string, "null"]
+        riskScore:
+          type: [integer, "null"]
+        reviewedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ComplianceReviewResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ComplianceReviewData"
+    CreateComplianceReviewRequest:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+            - APPROVED
+            - REJECTED
+            - MANUAL_REVIEW
+        notes:
+          type: [string, "null"]
+        riskScore:
+          type: [integer, "null"]
+      required:
+        - decision
+    NotificationData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        notificationNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - SECURITY
+            - PAYMENT
+            - TRANSFER
+            - DEPOSIT
+            - WITHDRAWAL
+            - EXCHANGE
+            - LOGIN
+            - MFA
+            - KYC
+            - SYSTEM
+            - MARKETING
+        channel:
+          type: string
+          enum:
+            - EMAIL
+            - SMS
+            - PUSH
+            - IN_APP
+            - WHATSAPP
+        status:
+          type: string
+          enum:
+            - PENDING
+            - PROCESSING
+            - SENT
+            - DELIVERED
+            - READ
+            - FAILED
+            - CANCELLED
+        priority:
+          type: string
+          enum:
+            - LOW
+            - NORMAL
+            - HIGH
+            - CRITICAL
+        subject:
+          type: [string, "null"]
+        title:
+          type: string
+        message:
+          type: string
+        scheduledAt:
+          type: [string, "null"]
+          format: date-time
+        sentAt:
+          type: [string, "null"]
+          format: date-time
+        deliveredAt:
+          type: [string, "null"]
+          format: date-time
+        readAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    NotificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/NotificationData"
+    NotificationListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationData"
+    CreateNotificationRequest:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - SECURITY
+            - PAYMENT
+            - TRANSFER
+            - DEPOSIT
+            - WITHDRAWAL
+            - EXCHANGE
+            - LOGIN
+            - MFA
+            - KYC
+            - SYSTEM
+            - MARKETING
+        channel:
+          type: string
+          enum:
+            - EMAIL
+            - SMS
+            - PUSH
+            - IN_APP
+            - WHATSAPP
+        priority:
+          type: string
+          enum:
+            - LOW
+            - NORMAL
+            - HIGH
+            - CRITICAL
+        subject:
+          type: [string, "null"]
+        title:
+          type: string
+        message:
+          type: string
+        scheduledAt:
+          type: [string, "null"]
+          format: date-time
+      required:
+        - accountId
+        - type
+        - channel
+        - title
+        - message
+    UnreadCountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
           properties:
-            pagination:
-              $ref: "#/components/schemas/Pagination"
-
-            data:
-              type: array
-
-              items:
-                $ref: "#/components/schemas/Currency"
+            unreadCount:
+              type: integer
+    ApiKeyData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        apiKeyNumber:
+          type: string
+        accountId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+          description: Non-secret public prefix of the key, shown for identification.
+        environment:
+          type: string
+          enum:
+            - TEST
+            - LIVE
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - REVOKED
+            - EXPIRED
+        scopes:
+          type: array
+          items:
+            type: string
+        lastUsedAt:
+          type: [string, "null"]
+          format: date-time
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+        revokedAt:
+          type: [string, "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ApiKeyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/ApiKeyData"
+    ApiKeyListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyData"
+    CreateApiKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        environment:
+          type: string
+          enum:
+            - TEST
+            - LIVE
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: [string, "null"]
+          format: date-time
+      required:
+        - name
+        - environment
+    ApiKeyCreateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            apiKey:
+              $ref: "#/components/schemas/ApiKeyData"
+            secret:
+              type: string
+              description:
+                Raw API key secret. Returned only once, at creation time; it is not recoverable
+                afterward.

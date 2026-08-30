@@ -15,9 +15,16 @@ export class ApiKeysController {
 
   async create(request: Request, response: Response) {
     try {
-      const apiKey = await this.apiKeysService.create(
-        request.body,
-      );
+      const userId = request.user?.id;
+
+      if (!userId) {
+        return response.status(401).json({
+          success: false,
+          message: "Unauthorized.",
+        });
+      }
+
+      const apiKey = await this.apiKeysService.create(userId, request.body);
 
       return response.status(201).json({
         success: true,
@@ -27,8 +34,7 @@ export class ApiKeysController {
     } catch (error: any) {
       return response.status(400).json({
         success: false,
-        message:
-          error.message || "Failed to create API key.",
+        message: error.message || "Failed to create API key.",
       });
     }
   }
@@ -48,8 +54,7 @@ export class ApiKeysController {
         });
       }
 
-      const apiKeys =
-        await this.apiKeysService.findAll(userId);
+      const apiKeys = await this.apiKeysService.findAll(userId);
 
       return response.status(200).json({
         success: true,
@@ -58,8 +63,7 @@ export class ApiKeysController {
     } catch (error: any) {
       return response.status(400).json({
         success: false,
-        message:
-          error.message || "Failed to retrieve API keys.",
+        message: error.message || "Failed to retrieve API keys.",
       });
     }
   }
@@ -81,11 +85,7 @@ export class ApiKeysController {
 
       const { id } = request.params;
 
-      const apiKey =
-        await this.apiKeysService.findById(
-          userId,
-          id as string,
-        );
+      const apiKey = await this.apiKeysService.findById(userId, id as string);
 
       return response.status(200).json({
         success: true,
@@ -94,8 +94,7 @@ export class ApiKeysController {
     } catch (error: any) {
       return response.status(404).json({
         success: false,
-        message:
-          error.message || "API key not found.",
+        message: error.message || "API key not found.",
       });
     }
   }
@@ -117,11 +116,7 @@ export class ApiKeysController {
 
       const { id } = request.params;
 
-      const apiKey =
-        await this.apiKeysService.revoke(
-          userId,
-          id as string,
-        );
+      const apiKey = await this.apiKeysService.revoke(userId, id as string);
 
       return response.status(200).json({
         success: true,
@@ -131,8 +126,7 @@ export class ApiKeysController {
     } catch (error: any) {
       return response.status(404).json({
         success: false,
-        message:
-          error.message || "API key not found.",
+        message: error.message || "API key not found.",
       });
     }
   }
@@ -154,10 +148,7 @@ export class ApiKeysController {
 
       const { id } = request.params;
 
-      await this.apiKeysService.delete(
-        userId,
-        id as string,
-      );
+      await this.apiKeysService.delete(userId, id as string);
 
       return response.status(200).json({
         success: true,
@@ -166,8 +157,7 @@ export class ApiKeysController {
     } catch (error: any) {
       return response.status(404).json({
         success: false,
-        message:
-          error.message || "API key not found.",
+        message: error.message || "API key not found.",
       });
     }
   }

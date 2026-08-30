@@ -14,7 +14,13 @@ export class ApiKeysService {
   // CREATE API KEY
   // ======================================================
 
-  async create(data: CreateApiKeyDTO) {
+  async create(userId: string, data: CreateApiKeyDTO) {
+    const accountIds = await this.getAccountIdsByUserId(userId);
+
+    if (!accountIds.includes(data.accountId)) {
+      throw new Error("You are not authorized to use this account.");
+    }
+
     const apiKeyNumber = this.generateApiKeyNumber();
 
     // API Key secreta — será mostrada apenas uma vez
@@ -46,12 +52,9 @@ export class ApiKeysService {
   // ======================================================
 
   async findAll(userId: string) {
-    const accountIds =
-      await this.getAccountIdsByUserId(userId);
+    const accountIds = await this.getAccountIdsByUserId(userId);
 
-    return this.apiKeysRepository.findAllByAccountIds(
-      accountIds,
-    );
+    return this.apiKeysRepository.findAllByAccountIds(accountIds);
   }
 
   // ======================================================
@@ -59,14 +62,12 @@ export class ApiKeysService {
   // ======================================================
 
   async findById(userId: string, id: string) {
-    const accountIds =
-      await this.getAccountIdsByUserId(userId);
+    const accountIds = await this.getAccountIdsByUserId(userId);
 
-    const apiKey =
-      await this.apiKeysRepository.findByIdAndAccountIds(
-        id,
-        accountIds,
-      );
+    const apiKey = await this.apiKeysRepository.findByIdAndAccountIds(
+      id,
+      accountIds,
+    );
 
     if (!apiKey) {
       throw new Error("API key not found.");
@@ -100,8 +101,7 @@ export class ApiKeysService {
   // ======================================================
 
   private generateApiKey(): string {
-    return `kn_live_${randomBytes(32)
-      .toString("hex")}`;
+    return `kn_live_${randomBytes(32).toString("hex")}`;
   }
 
   // ======================================================
@@ -109,9 +109,7 @@ export class ApiKeysService {
   // ======================================================
 
   private generateApiKeyNumber(): string {
-    return `KEY-${randomBytes(6)
-      .toString("hex")
-      .toUpperCase()}`;
+    return `KEY-${randomBytes(6).toString("hex").toUpperCase()}`;
   }
 
   // ======================================================
@@ -119,31 +117,23 @@ export class ApiKeysService {
   // ======================================================
 
   private hashApiKey(apiKey: string): string {
-    return createHash("sha256")
-      .update(apiKey)
-      .digest("hex");
+    return createHash("sha256").update(apiKey).digest("hex");
   }
 
   // ======================================================
   // GET USER ACCOUNT IDS
   // ======================================================
 
-  private async getAccountIdsByUserId(
-    userId: string,
-  ): Promise<string[]> {
-    const profile =
-      await this.apiKeysRepository.findProfileByUserId(
-        userId,
-      );
+  private async getAccountIdsByUserId(userId: string): Promise<string[]> {
+    const profile = await this.apiKeysRepository.findProfileByUserId(userId);
 
     if (!profile) {
       throw new Error("Profile not found.");
     }
 
-    const accounts =
-      await this.apiKeysRepository.findAccountsByProfileId(
-        profile.id,
-      );
+    const accounts = await this.apiKeysRepository.findAccountsByProfileId(
+      profile.id,
+    );
 
     return accounts.map((account) => account.id);
   }
