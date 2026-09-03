@@ -1124,7 +1124,7 @@ paths:
             type: string
             format: uuid
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -1720,7 +1720,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
 
   /merchants/members/{id}/deactivate:
     patch:
@@ -2398,6 +2397,9 @@ components:
         password:
           type: string
           format: password
+        confirmPassword:
+          type: string
+          format: password
         firstName:
           type: string
         lastName:
@@ -2412,6 +2414,7 @@ components:
       required:
         - email
         - password
+        - confirmPassword
         - firstName
         - lastName
         - countryCode
@@ -2569,15 +2572,17 @@ components:
     MfaLoginVerifyRequest:
       type: object
       properties:
+        challengeToken:
+          type: string
+          description: Temporary MFA challenge token issued after password verification.
         code:
           type: string
+          pattern: '^\d{6}$'
+          example: "123456"
           description: 6-digit TOTP code.
-        sessionToken:
-          type: string
-          description: Temporary token issued after password verification.
       required:
+        - challengeToken
         - code
-        - sessionToken
     UserResponseData:
       type: object
       properties:
@@ -2636,19 +2641,21 @@ components:
     UpdateUserRequest:
       type: object
       properties:
-        role:
-          type: string
-          enum:
-            - USER
-            - SUPPORT
-            - ADMIN
-        status:
-          type: string
-          enum:
-            - PENDING
-            - ACTIVE
-            - BLOCKED
-            - SUSPENDED
+          email:
+            type: string
+            format: email
+            description: New email address for the user.
+            example: "user.updated@example.com"
+          status:
+            type: string
+            description: New status for the user.
+            enum:
+              - PENDING
+              - ACTIVE
+              - BLOCKED
+              - SUSPENDED
+            example: ACTIVE
+
     ProfileData:
       type: object
       properties:
@@ -2697,25 +2704,80 @@ components:
       properties:
         displayName:
           type: string
+          description: User display name.
+          example: "Jean Joseph Bauzil"
+
         legalName:
           type: string
+          description: User legal name.
+          example: "Jean Joseph Bauzil"
+
         firstName:
           type: string
+          description: User first name.
+          example: "Jean"
+
         middleName:
-          type: [string, "null"]
+          type:
+            - string
+            - "null"
+          description: User middle name.
+          example: null
+
         lastName:
           type: string
+          description: User last name.
+          example: "Bauzil"
+
         birthDate:
-          type: [string, "null"]
+          type:
+            - string
+            - "null"
           format: date-time
+          description: User birth date.
+          example: "1986-11-02T00:00:00.000Z"
+
         phoneCountryCode:
-          type: [string, "null"]
+          type:
+            - string
+            - "null"
+          description: Phone country calling code.
+          example: "+55"
+
         phoneNumber:
-          type: [string, "null"]
+          type:
+            - string
+            - "null"
+          description: User phone number.
+          example: "47999999999"
+
         avatarUrl:
-          type: [string, "null"]
+          type:
+            - string
+            - "null"
+          description: User avatar URL.
+          example: "https://example.com/avatar.jpg"
+
         languageCode:
-          type: [string, "null"]
+          type:
+            - string
+            - "null"
+          description: Preferred language code.
+          example: "pt"
+
+        languageId:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: Preferred language ID.
+
+        timezoneId:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: Preferred timezone ID.
     AccountData:
       type: object
       properties:
@@ -2787,16 +2849,10 @@ components:
       properties:
         displayName:
           type: string
-        legalName:
-          type: [string, "null"]
-        languageId:
-          type: [string, "null"]
-          format: uuid
-        timezoneId:
-          type: [string, "null"]
-          format: uuid
-        isDefault:
-          type: boolean
+          description: Account display name.
+          example: "Jean Joseph Bauzil"
+      required:
+        - displayName
     WalletData:
       type: object
       properties:
@@ -2933,40 +2989,52 @@ components:
     CreateDepositRequest:
       type: object
       properties:
-        walletId:
+        destinationWalletId:
           type: string
           format: uuid
+          description: Destination wallet receiving the deposit.
         amount:
           type: string
           description: Decimal amount, serialized as a string to preserve precision.
-        externalReference:
-          type: [string, "null"]
+          example: "10"
         description:
           type: [string, "null"]
+          example: "Unauthorized deposit test"
+        idempotencyKey:
+          type: string
+          description: Unique key used to prevent duplicate deposits.
+          example: "UNAUTHORIZED-DEPOSIT-001"
       required:
-        - walletId
+        - destinationWalletId
         - amount
+        - idempotencyKey
     CreateTransferRequest:
       type: object
       properties:
         sourceWalletId:
           type: string
           format: uuid
-        recipientId:
+          description: Source wallet sending the transfer.
+        destinationWalletId:
           type: string
           format: uuid
-          description: Recipient to transfer to.
+          description: Destination wallet receiving the transfer.
         amount:
           type: string
           description: Decimal amount, serialized as a string to preserve precision.
+          example: "1"
         description:
           type: [string, "null"]
+          example: "Idempotency test"
         idempotencyKey:
-          type: [string, "null"]
+          type: string
+          description: Unique key used to prevent duplicate transfers.
+          example: "IDEMPOTENCY-TEST-2026-001"
       required:
         - sourceWalletId
-        - recipientId
+        - destinationWalletId
         - amount
+        - idempotencyKey
     RecipientData:
       type: object
       properties:
@@ -3027,23 +3095,41 @@ components:
     CreateRecipientRequest:
       type: object
       properties:
-        destinationAccountNumber:
+        ownerAccountNumber:
           type: string
-          description: Account number of the account to add as a recipient.
+          description: Account number of the recipient owner.
+          example: "ACC-6D2158458CA6"
+        accountNumber:
+          type: string
+          description: Account number to add as a recipient.
+          example: "ACC-AE34BAB339DD"
+        type:
+          type: string
+          enum:
+            - PERSONAL
+            - BUSINESS
+          example: PERSONAL
+          description: Type of the recipient account.
         nickname:
           type: [string, "null"]
+          description: Optional nickname for the recipient.
+          example: "Jean - Conta de teste"
       required:
-        - destinationAccountNumber
+        - ownerAccountNumber
+        - accountNumber
+        - type
     UpdateRecipientRequest:
       type: object
       properties:
-        nickname:
-          type: [string, "null"]
         status:
           type: string
           enum:
             - ACTIVE
             - BLOCKED
+          example: ACTIVE
+          description: Recipient status.
+      required:
+        - status
     ExchangeQuoteData:
       type: object
       properties:
@@ -3239,42 +3325,42 @@ components:
         baseCurrencyId:
           type: string
           format: uuid
+          description: Base currency ID.
+          example: "bf2e71c5-aa33-4c0d-bc88-06191cb3616f"
         quoteCurrencyId:
           type: string
           format: uuid
+          description: Quote currency ID.
+          example: "a577d198-8750-4b24-9f23-88dcc74b55e6"
         rate:
-          type: string
-          description: Decimal amount, serialized as a string to preserve precision.
+          type: number
+          format: double
+          description: Exchange rate from the base currency to the quote currency.
+          example: 0.30
         provider:
           type: string
-          enum:
-            - INTERNAL
-            - MANUAL
-            - ECB
-            - FIXER
-            - OPEN_EXCHANGE
-            - CUSTOM
-        validFrom:
-          type: string
-          format: date-time
-        validUntil:
-          type: [string, "null"]
-          format: date-time
+          description: Exchange rate provider.
+          example: MANUAL
       required:
         - baseCurrencyId
         - quoteCurrencyId
         - rate
         - provider
-        - validFrom
     UpdateExchangeRateRequest:
       type: object
       properties:
         rate:
+          type: number
+          format: double
+          description: New exchange rate.
+          example: 0.20
+        provider:
           type: string
-          description: Decimal amount, serialized as a string to preserve precision.
-        validUntil:
-          type: [string, "null"]
-          format: date-time
+          description: Exchange rate provider.
+          example: MANUAL
+      required:
+        - rate
+        - provider
     PaymentData:
       type: object
       properties:
@@ -3392,23 +3478,33 @@ components:
         amount:
           type: string
           description: Decimal amount, serialized as a string to preserve precision.
+          example: "10.00"
+        idempotencyKey:
+          type: string
+          description: Unique key used to prevent duplicate payments.
+          example: "PAYMENT-ERROR-SELF-001"
         description:
-          type: [string, "null"]
-        externalReference:
           type: [string, "null"]
       required:
         - accountId
+        - merchantId
         - type
         - method
         - amount
+        - idempotencyKey
     RefundPaymentRequest:
       type: object
       properties:
-        amount:
+        idempotencyKey:
           type: string
-          description: Amount to refund; omit to refund in full.
-        reason:
+          description: Unique key used to prevent duplicate refunds.
+          example: "REFUND-TEST-001"
+        description:
           type: [string, "null"]
+          description: Description of the refund.
+          example: "Test refund"
+      required:
+        - idempotencyKey
     PaymentLinkData:
       type: object
       properties:
@@ -3471,22 +3567,32 @@ components:
     CreatePaymentLinkRequest:
       type: object
       properties:
+        merchantId:
+          type: string
+          format: uuid
+          description: Merchant that owns the payment link.
         currencyId:
           type: string
           format: uuid
+          description: Currency used for the payment link.
         amount:
           type: string
           description: Decimal amount, serialized as a string to preserve precision.
+          example: "20"
         description:
           type: [string, "null"]
+          description: Description of the payment link.
+          example: "Payment Link Max Uses Test"
         externalReference:
           type: [string, "null"]
-        expiresAt:
-          type: [string, "null"]
-          format: date-time
+          description: External reference for the payment link.
+          example: "PL-MAX-USES-001"
         maxUses:
           type: [integer, "null"]
+          description: Maximum number of times the payment link can be used.
+          example: 3
       required:
+        - merchantId
         - currencyId
         - amount
     PayPaymentLinkRequest:
@@ -3495,18 +3601,18 @@ components:
         accountId:
           type: string
           format: uuid
-        method:
+          description: Account used to pay the payment link.
+        idempotencyKey:
           type: string
-          enum:
-            - WALLET
-            - BANK_TRANSFER
-            - CARD
-            - PIX
-            - QR_CODE
-            - PAYMENT_LINK
+          description: Unique key used to prevent duplicate payments.
+          example: "PL-PAY-001"
+        description:
+          type: [string, "null"]
+          description: Optional description for the payment.
+          example: "Payment link payment"
       required:
         - accountId
-        - method
+        - idempotencyKey
     MerchantData:
       type: object
       properties:
@@ -3736,31 +3842,84 @@ components:
       type: object
       properties:
         displayName:
-          type: [string, "null"]
+          type: string
+          description: Merchant display name.
+          example: "Knissa Store"
+
         logoUrl:
-          type: [string, "null"]
+          type: string
+          description: Merchant logo URL.
+          example: "https://example.com/logo.png"
+
         websiteUrl:
-          type: [string, "null"]
+          type: string
+          description: Merchant website URL.
+          example: "https://example.com"
+
         supportEmail:
-          type: [string, "null"]
+          type: string
+          description: Merchant support email.
+          example: "support@knissa.com"
+
         supportPhone:
-          type: [string, "null"]
+          type: string
+          description: Merchant support phone number.
+          example: "+55 47 99999-9999"
+
+        languageId:
+          type: string
+          format: uuid
+          description: Default language ID for the merchant.
+
+        timezoneId:
+          type: string
+          format: uuid
+          description: Default timezone ID for the merchant.
+
+        currencyId:
+          type: string
+          format: uuid
+          description: Default currency ID for the merchant.
+
         allowWalletPayments:
           type: boolean
+          description: Allow wallet payments.
+          example: true
+
         allowQrCodePayments:
           type: boolean
+          description: Allow QR code payments.
+          example: true
+
         allowPaymentLinks:
           type: boolean
+          description: Allow payment link payments.
+          example: true
+
         autoSettlement:
           type: boolean
+          description: Enable automatic settlement.
+          example: true
+
         emailNotifications:
           type: boolean
+          description: Enable email notifications.
+          example: true
+
         smsNotifications:
           type: boolean
+          description: Enable SMS notifications.
+          example: false
+
         pushNotifications:
           type: boolean
+          description: Enable push notifications.
+          example: true
+
         whatsappNotifications:
           type: boolean
+          description: Enable WhatsApp notifications.
+          example: true
     ComplianceProfileData:
       type: object
       properties:
@@ -3975,17 +4134,38 @@ components:
     CreateComplianceReviewRequest:
       type: object
       properties:
+        complianceProfileId:
+          type: string
+          format: uuid
+          description: Compliance profile being reviewed.
+          example: "7bb1942a-9026-4312-96f4-310d81927d5a"
+
         decision:
           type: string
+          description: Compliance review decision.
           enum:
             - APPROVED
             - REJECTED
             - MANUAL_REVIEW
+          example: APPROVED
+
         notes:
-          type: [string, "null"]
+          type: string
+          description: Notes or comments from the compliance review.
+          example: "Compliance documents verified and approved."
+
         riskScore:
-          type: [integer, "null"]
+          type: integer
+          description: Risk score assigned during the review.
+          example: 10
+
+        reviewDuration:
+          type: integer
+          description: Review duration in minutes.
+          example: 120
+
       required:
+        - complianceProfileId
         - decision
     NotificationData:
       type: object
@@ -4201,23 +4381,26 @@ components:
     CreateApiKeyRequest:
       type: object
       properties:
+        accountId:
+          type: string
+          format: uuid
+          description: Account that owns the API key.
+          example: "67cac0a8-72fc-443c-8c63-95b8cc5f2216"
+
         name:
           type: string
-        environment:
-          type: string
-          enum:
-            - TEST
-            - LIVE
-        scopes:
-          type: array
-          items:
-            type: string
+          description: Name used to identify the API key.
+          example: "Knissa Test API Key"
+
         expiresAt:
-          type: [string, "null"]
+          type: string
           format: date-time
+          description: Optional expiration date and time for the API key.
+          example: "2027-09-03T00:00:00.000Z"
+
       required:
+        - accountId
         - name
-        - environment
     ApiKeyCreateResponse:
       type: object
       properties:
@@ -4231,6 +4414,4 @@ components:
               $ref: "#/components/schemas/ApiKeyData"
             secret:
               type: string
-              description:
-                Raw API key secret. Returned only once, at creation time; it is not recoverable
-                afterward.
+              description: "Raw API key secret. Returned only once, at creation time; it is not recoverable afterward."
